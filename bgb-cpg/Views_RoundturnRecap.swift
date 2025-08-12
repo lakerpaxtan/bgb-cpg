@@ -1,0 +1,242 @@
+import SwiftUI
+
+// MARK: - Round Intro
+
+struct RoundIntroView: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(store.currentRound.title).font(.largeTitle.bold())
+            Text(store.currentRound.rules).font(.title3)
+            HStack {
+                Text("Note:").font(.headline)
+                Text("Leading “The/A/An” optional when guessing.")
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+
+            Text(store.currentRound.skipPolicy)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+
+            Spacer()
+
+            BigButton(title: "Start Round \(store.currentRound.rawValue)") {
+                store.startRound()
+            }
+        }
+        .padding(24)
+    }
+}
+
+// MARK: - Turn Handoff
+
+struct TurnHandoffView: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Text("Turn Handoff").font(.title.bold())
+
+            if let cg = store.clueGiver {
+                Text("Hand the phone to \(cg.name) on \(cg.team.name).")
+                    .font(.title3)
+                    .multilineTextAlignment(.center)
+            }
+
+            Text(store.currentRound.skipPolicy)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+
+            BigButton(title: "I’m \(store.clueGiver?.name ?? "Next") — Show Controls",
+                      action: { store.showPrimer() },
+                      fill: store.currentTeam.color)
+
+            Spacer()
+        }
+        .padding(24)
+    }
+}
+
+// MARK: - Primer
+
+struct PrimerView: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            Image(systemName: "hand.raised")
+                .font(.system(size: 56))
+                .foregroundStyle(.secondary)
+            Text("Only the clue-giver should see the screen.")
+                .font(.title3.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            Text("You’ll see the title and the chip list of words you can’t say.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text("Starting…").font(.footnote).foregroundStyle(.secondary)
+        }
+        .padding(24)
+        .transition(.opacity)
+    }
+}
+
+// MARK: - Turn Screen
+
+struct TurnView: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // Header
+            HStack {
+                Text("\(store.timeRemaining)s")
+                    .font(.system(size: 40, weight: .heavy, design: .rounded))
+                    .foregroundStyle(store.currentTeam.color)
+                    .monospacedDigit()
+
+                Spacer()
+
+                // Skip status badge
+                Group {
+                    if store.currentRound == .one {
+                        Text("Skip: Off")
+                    } else if store.skipLocked {
+                        Text("Back at start — Skip off")
+                    } else {
+                        Text("Skip until start card")
+                    }
+                }
+                .font(.footnote.weight(.semibold))
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .background(Color.black.opacity(0.06))
+                .clipShape(Capsule())
+            }
+
+            Divider()
+
+            // Card area
+            if let card = store.deck.first {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(card.title)
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+
+                    TokenChips(tokens: store.tokens(for: card.title))
+                        .padding(.top, 4)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color.white.opacity(0.95))
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .shadow(color: .black.opacity(0.06), radius: 8, y: 6)
+                .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                                        removal: .move(edge: .leading).combined(with: .opacity)))
+                .animation(.spring(response: 0.45, dampingFraction: 0.85), value: store.deck.first?.id)
+            } else {
+                Text("No cards left.")
+                    .font(.title3.weight(.semibold))
+                    .padding()
+            }
+
+            Spacer()
+
+            HStack(spacing: 12) {
+                if store.currentRound != .one {
+                    OutlineButton(title: "Skip") {
+                        store.skipCard()
+                    }
+                    .disabled(store.skipLocked || store.deck.isEmpty)
+                }
+                BigButton(title: "Correct",
+                          action: { store.markCorrect() },
+                          fill: .green)
+                .disabled(store.deck.isEmpty)
+            }
+        }
+        .padding(24)
+        .onDisappear { /* defensive */ }
+    }
+}
+
+// MARK: - Recap
+
+struct RecapView: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Turn Recap")
+                .font(.largeTitle.bold())
+
+            Text("Highlight the correct answers and only read those out loud.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+            if store.thisTurnCorrect.isEmpty {
+                Text("No correct answers this turn.")
+                    .font(.headline)
+                    .padding(.top, 8)
+            } else {
+                List {
+                    ForEach(store.thisTurnCorrect) { ev in
+                        HStack {
+                            Toggle(isOn: binding(for: ev.id)) {
+                                Text(ev.card.title).font(.headline)
+                            }
+                            .toggleStyle(SwitchToggleStyle(tint: .blue))
+
+                            Spacer()
+
+                            Button {
+                                withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
+                                    store.undo(event: ev.id)
+                                }
+                            } label: {
+                                Text("Undo")
+                                    .font(.subheadline.weight(.semibold))
+                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                    .background(Color.red.opacity(0.12))
+                                    .foregroundStyle(.red)
+                                    .clipShape(Capsule())
+                            }
+                        }
+                    }
+                }
+                .listStyle(.plain)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .frame(maxHeight: 320)
+            }
+
+            HStack {
+                Text("Skips this turn: \(store.skipCount)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+
+            Spacer()
+
+            BigButton(title: "Hand the phone to next — I’m \(store.currentTeam == .A ? (store.teamBOrder.first?.name ?? "Next") : (store.teamAOrder.first?.name ?? "Next"))") {
+                store.recapDoneNextHandoff()
+            }
+        }
+        .padding(24)
+    }
+
+    private func binding(for id: UUID) -> Binding<Bool> {
+        Binding(get: {
+            store.thisTurnCorrect.first(where: { $0.id == id })?.highlighted ?? true
+        }, set: { new in
+            if let idx = store.thisTurnCorrect.firstIndex(where: { $0.id == id }) {
+                store.thisTurnCorrect[idx].highlighted = new
+            }
+        })
+    }
+}

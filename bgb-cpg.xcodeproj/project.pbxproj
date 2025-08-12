@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		CC5459A42E4AE5BA00B8CFA2 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = CC5459A32E4AE5B400B8CFA2 /* README.md */; };
+		CC5459A62E4AE60400B8CFA2 /* APP_FLOW.md in Resources */ = {isa = PBXBuildFile; fileRef = CC5459A52E4AE5F800B8CFA2 /* APP_FLOW.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		CC54596C2E4AD57D00B8CFA2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +32,8 @@
 		CC54595D2E4AD57C00B8CFA2 /* bgb-cpg.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "bgb-cpg.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CC54596B2E4AD57D00B8CFA2 /* bgb-cpgTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "bgb-cpgTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CC5459752E4AD57D00B8CFA2 /* bgb-cpgUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "bgb-cpgUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC5459A32E4AE5B400B8CFA2 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		CC5459A52E4AE5F800B8CFA2 /* APP_FLOW.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = APP_FLOW.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +82,8 @@
 		CC5459542E4AD57B00B8CFA2 = {
 			isa = PBXGroup;
 			children = (
+				CC5459A52E4AE5F800B8CFA2 /* APP_FLOW.md */,
+				CC5459A32E4AE5B400B8CFA2 /* README.md */,
 				CC54595F2E4AD57C00B8CFA2 /* bgb-cpg */,
 				CC54596E2E4AD57D00B8CFA2 /* bgb-cpgTests */,
 				CC5459782E4AD57D00B8CFA2 /* bgb-cpgUITests */,
@@ -212,6 +221,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CC5459A42E4AE5BA00B8CFA2 /* README.md in Resources */,
+				CC5459A62E4AE60400B8CFA2 /* APP_FLOW.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
