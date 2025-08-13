@@ -15,10 +15,6 @@
 
 1. Update the how to play slides to actually have better versions of the rules --- and get rid of the placeholder at the end 
 
-2. On the settings page after clicking start game --- there is no reason to have Team A and Team B picker be there
-
-3. On the enter your name page / flow --- the player should not be able to select their team --- lets just force the first x/2 players to be team A and the follow x/2 players to be team B --- get rid of the picker altogether --- but have a title showing that they are team A 
-
 ---
 
 # Completed Problems
@@ -29,4 +25,8 @@
 
 3. ~~On the Enter your name page --- there is a lot of center white space --- lets add a cute tip for them to read --- ill let you decide what it says~~ ✅
 
-4. ~~On the settings page there is no way to go back to the main menu --- lets add a standard back button to go back to main menu~~ ✅ 
+4. ~~On the settings page there is no way to go back to the main menu --- lets add a standard back button to go back to main menu~~ ✅
+
+5. ~~On the settings page after clicking start game --- there is no reason to have Team A and Team B picker be there~~ ✅
+
+6. ~~On the enter your name page / flow --- the player should not be able to select their team --- lets just force the first x/2 players to be team A and the follow x/2 players to be team B --- get rid of the picker altogether --- but have a title showing that they are team A~~ ✅ 

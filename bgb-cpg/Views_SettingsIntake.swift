@@ -34,14 +34,9 @@ struct SettingsView: View {
                         .frame(width: 60)
                 }
 
-                // Players / Starting team
+                // Players
                 Group {
                     Stepper("Players: \(s.players)", value: $s.players, in: 4...12)
-                    Picker("Starting team", selection: $s.startingTeam) {
-                        Text("Team A").tag(Team.A)
-                        Text("Team B").tag(Team.B)
-                    }
-                    .pickerStyle(.segmented)
                 }
 
                 Divider().padding(.vertical, 8)
@@ -158,11 +153,14 @@ struct IntakeNameView: View {
                 .textFieldStyle(.roundedBorder)
                 .submitLabel(.done)
 
-            Picker("Team", selection: $store.pendingTeam) {
-                Text("Team A").tag(Team.A)
-                Text("Team B").tag(Team.B)
-            }
-            .pickerStyle(.segmented)
+            let currentTeamCount = store.players.filter { $0.team == store.pendingTeam }.count
+            let playersPerTeam = store.settings.players / 2
+            let playerNumber = currentTeamCount + 1
+            
+            Text("You're joining \(store.pendingTeam == .A ? "Team A" : "Team B") as Player \(playerNumber)/\(playersPerTeam)!")
+                .font(.headline)
+                .foregroundStyle(store.pendingTeam == .A ? .blue : .green)
+                .padding(.vertical, 8)
 
             Spacer()
             
