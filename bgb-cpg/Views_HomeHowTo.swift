@@ -11,7 +11,7 @@ struct HomeView: View {
                 .tracking(0.5)
                 .foregroundStyle(.primary)
 
-            Text("3 rounds of charades: Anything goes → One word only → No words!")
+            Text("3 rounds: Describe → One word → Charades!")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
