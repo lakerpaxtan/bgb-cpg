@@ -66,7 +66,9 @@ struct HowToView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.white.opacity(0.8))
                         .clipShape(RoundedRectangle(cornerRadius: 20))
-                        .padding(24)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 24)
+                        .padding(.bottom, 40)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
