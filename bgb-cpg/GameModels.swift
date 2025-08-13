@@ -18,7 +18,7 @@ enum Team: String, Codable, CaseIterable {
 enum Stage {
     case home, howTo, settings
     case intakeHandoff, intakeName, intakePicks
-    case roundIntro, turnHandoff, primer, turn, recap, roundEnd, gameEnd
+    case roundIntro, turnHandoff, primer, turnReady, turn, recap, roundEnd, gameEnd
 }
 
 enum RoundPhase: Int, Codable {

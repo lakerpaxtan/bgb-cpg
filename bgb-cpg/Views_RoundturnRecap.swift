@@ -88,6 +88,83 @@ struct PrimerView: View {
     }
 }
 
+// MARK: - Turn Ready Screen
+
+struct TurnReadyView: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        ZStack {
+            // Blurred background showing the upcoming turn content
+            VStack(alignment: .leading, spacing: 14) {
+                // Header (blurred)
+                HStack {
+                    Text("\(store.settings.timerSeconds)s")
+                        .font(.system(size: 40, weight: .heavy, design: .rounded))
+                        .foregroundStyle(store.currentTeam.color.opacity(0.3))
+                        .monospacedDigit()
+
+                    Spacer()
+
+                    Text("Ready to start")
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(Color.black.opacity(0.03))
+                        .clipShape(Capsule())
+                }
+
+                Divider().opacity(0.3)
+
+                // Card area (blurred)
+                if let card = store.deck.first {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Ready to see your card?")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
+                    .background(Color.white.opacity(0.5))
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .shadow(color: .black.opacity(0.03), radius: 8, y: 6)
+                }
+
+                Spacer()
+
+                // Placeholder buttons (disabled/blurred)
+                HStack(spacing: 12) {
+                    if store.currentRound != .one {
+                        OutlineButton(title: "Skip") {}
+                            .disabled(true)
+                            .opacity(0.4)
+                    }
+                    BigButton(title: "Correct", action: {}, fill: .green)
+                        .disabled(true)
+                        .opacity(0.4)
+                }
+            }
+            .padding(24)
+            .blur(radius: 3)
+            
+            // Center start button
+            VStack(spacing: 16) {
+                Text("Get ready!")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.primary)
+                
+                BigButton(title: "Start Timer", action: {
+                    store.beginTurn()
+                }, fill: store.currentTeam.color)
+            }
+            .padding(32)
+            .background(Color.white.opacity(0.95))
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: .black.opacity(0.1), radius: 12, y: 8)
+        }
+    }
+}
+
 // MARK: - Turn Screen
 
 struct TurnView: View {
@@ -184,27 +261,10 @@ struct RecapView: View {
             } else {
                 List {
                     ForEach(store.thisTurnCorrect) { ev in
-                        HStack {
-                            Toggle(isOn: binding(for: ev.id)) {
-                                Text(ev.card.title).font(.headline)
-                            }
-                            .toggleStyle(SwitchToggleStyle(tint: .blue))
-
-                            Spacer()
-
-                            Button {
-                                withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
-                                    store.undo(event: ev.id)
-                                }
-                            } label: {
-                                Text("Undo")
-                                    .font(.subheadline.weight(.semibold))
-                                    .padding(.horizontal, 10).padding(.vertical, 6)
-                                    .background(Color.red.opacity(0.12))
-                                    .foregroundStyle(.red)
-                                    .clipShape(Capsule())
-                            }
+                        Toggle(isOn: binding(for: ev.id)) {
+                            Text(ev.card.title).font(.headline)
                         }
+                        .toggleStyle(SwitchToggleStyle(tint: .blue))
                     }
                 }
                 .listStyle(.plain)
@@ -212,12 +272,6 @@ struct RecapView: View {
                 .frame(maxHeight: 320)
             }
 
-            HStack {
-                Text("Skips this turn: \(store.skipCount)")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
 
             Spacer()
 

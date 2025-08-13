@@ -155,3 +155,25 @@ struct ConfettiView: View {
         }
     }
 }
+
+struct RestartButton: View {
+    @EnvironmentObject var store: GameStore
+    
+    var body: some View {
+        Button("Restart back to settings screen") {
+            store.showRestartConfirmation()
+        }
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+        .alert("Are you sure?", isPresented: $store.showingRestartConfirmation) {
+            Button("Cancel", role: .cancel) {
+                store.cancelRestart()
+            }
+            Button("Restart", role: .destructive) {
+                store.confirmRestart()
+            }
+        } message: {
+            Text("This will reset all player input")
+        }
+    }
+}

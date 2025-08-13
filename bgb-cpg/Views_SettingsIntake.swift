@@ -132,9 +132,12 @@ struct IntakeHandoffView: View {
                 .font(.title3)
                 .multilineTextAlignment(.center)
 
-            BigButton(title: "I’m next") {
+            BigButton(title: "I'm next") {
                 store.intakeProceed()
             }
+            
+            RestartButton()
+            
             Spacer()
         }
         .padding(24)
@@ -182,8 +185,13 @@ struct IntakeNameView: View {
 
             Spacer()
 
-            BigButton(title: "Next") {
-                store.intakeSaveNameAndShowPicks()
+            VStack(spacing: 12) {
+                BigButton(title: "Next") {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    store.intakeSaveNameAndShowPicks()
+                }
+                
+                RestartButton()
             }
         }
         .padding(24)
@@ -218,13 +226,18 @@ struct IntakePicksView: View {
                 }
             }
 
-            BigButton(title: "Review & Submit") {
-                guard store.selectedPicks.count == store.settings.picksPerPlayer else {
-                    Haptics.warning(); return
+            VStack(spacing: 12) {
+                BigButton(title: "Review & Submit") {
+                    guard store.selectedPicks.count == store.settings.picksPerPlayer else {
+                        Haptics.warning(); return
+                    }
+                    store.submitPlayerAndPicks()
                 }
-                store.submitPlayerAndPicks()
+                .disabled(store.selectedPicks.count != store.settings.picksPerPlayer)
+                
+                RestartButton()
+                    .padding(.top, 4)
             }
-            .disabled(store.selectedPicks.count != store.settings.picksPerPlayer)
         }
         .padding(24)
     }

@@ -32,6 +32,8 @@ struct ContentView: View {
                 TurnHandoffView()
             case .primer:
                 PrimerView()
+            case .turnReady:
+                TurnReadyView()
             case .turn:
                 TurnView()
             case .recap:

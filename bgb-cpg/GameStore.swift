@@ -52,6 +52,7 @@ final class GameStore: ObservableObject {
     @Published var pendingTeam: Team = .A
     @Published var candidateTitles: [Card] = []
     @Published var selectedPicks: Set<UUID> = []
+    @Published var showingRestartConfirmation: Bool = false
 
     // UI helpers
     var backgroundColors: [Color] {
@@ -60,7 +61,7 @@ final class GameStore: ObservableObject {
             return [Color.white, Color(white: 0.95)]
         case .settings, .intakeHandoff, .intakeName, .intakePicks:
             return [Color(.systemTeal).opacity(0.12), Color(.systemBlue).opacity(0.10)]
-        case .roundIntro, .turnHandoff, .primer:
+        case .roundIntro, .turnHandoff, .primer, .turnReady:
             return [currentTeam.color.opacity(0.12), Color(.systemGray6)]
         case .turn:
             return [currentTeam.color.opacity(0.18), .white]
@@ -93,6 +94,16 @@ final class GameStore: ObservableObject {
     }
 
     func showHowTo() { stage = .howTo }
+    
+    func showRestartConfirmation() { showingRestartConfirmation = true }
+    
+    func confirmRestart() {
+        showingRestartConfirmation = false
+        goHome(resetAll: true)
+        startSettings()
+    }
+    
+    func cancelRestart() { showingRestartConfirmation = false }
 
     func startSettings() {
         currentTeam = settings.startingTeam
@@ -159,6 +170,11 @@ final class GameStore: ObservableObject {
 
     private func generateCandidates() {
         var set = Set<String>()
+        
+        // Start with cards already picked by other players to avoid duplicates
+        let globalExisting = Set(allCards.map { $0.title.lowercased() })
+        set.formUnion(globalExisting)
+        
         candidateTitles = []
         let need = settings.titlesPerPlayer
         var tries = 0
@@ -176,8 +192,19 @@ final class GameStore: ObservableObject {
 
     func reroll(card id: UUID) {
         guard let idx = candidateTitles.firstIndex(where: { $0.id == id }) else { return }
+        
+        // If this card was selected, deselect it
+        if selectedPicks.contains(id) {
+            selectedPicks.remove(id)
+        }
+        
         var existing = Set(candidateTitles.map { $0.title.lowercased() })
         existing.remove(candidateTitles[idx].title.lowercased())
+        
+        // Also avoid cards already picked by other players
+        let globalExisting = Set(allCards.map { $0.title.lowercased() })
+        existing.formUnion(globalExisting)
+        
         // keep trying until we find a replacement
         if let new = drawOneCard(avoid: existing) {
             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
@@ -299,9 +326,9 @@ final class GameStore: ObservableObject {
     func showPrimer() {
         stage = .primer
         Haptics.soft()
-        // auto-advance after ~2 seconds
+        // auto-advance to ready screen after ~2 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
-            self.beginTurn()
+            self.stage = .turnReady
         }
     }
 
@@ -432,6 +459,23 @@ final class GameStore: ObservableObject {
     }
 
     func recapDoneNextHandoff() {
+        // Handle untoggled cards - put them at bottom of deck and remove from score
+        let untoggled = thisTurnCorrect.filter { !$0.highlighted }
+        for ev in untoggled {
+            // Put card at bottom of deck
+            deck.append(ev.card)
+            
+            // Remove from score
+            if var r = roundScores[currentRound.rawValue] {
+                if currentTeam == .A { r.teamA = max(0, r.teamA - 1); cumulativeA = max(0, cumulativeA - 1) }
+                else { r.teamB = max(0, r.teamB - 1); cumulativeB = max(0, cumulativeB - 1) }
+                roundScores[currentRound.rawValue] = r
+            }
+        }
+        
+        // Clear this turn's events
+        thisTurnCorrect.removeAll()
+        
         // All corrects are already counted. Move to next team handoff or end round.
         if deck.isEmpty {
             endRoundIfNeeded()
