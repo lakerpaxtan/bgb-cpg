@@ -157,7 +157,7 @@ struct IntakeNameView: View {
             let playersPerTeam = store.settings.players / 2
             let playerNumber = currentTeamCount + 1
             
-            Text("You're joining \(store.pendingTeam == .A ? "Team A" : "Team B") as Player \(playerNumber)/\(playersPerTeam)!")
+            Text("You're joining \(store.pendingTeam == .A ? "Team A" : "Team B") as Player \(playerNumber) out of \(playersPerTeam)!")
                 .font(.headline)
                 .foregroundStyle(store.pendingTeam == .A ? .blue : .green)
                 .padding(.vertical, 8)
