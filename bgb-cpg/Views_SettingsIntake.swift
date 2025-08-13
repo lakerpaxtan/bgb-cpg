@@ -7,9 +7,32 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-
-                Text("Settings")
-                    .font(.largeTitle.bold())
+                
+                HStack {
+                    Button(action: {
+                        store.goHome(resetAll: false)
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Back")
+                                .font(.system(size: 17))
+                        }
+                        .foregroundStyle(.blue)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Spacer()
+                    
+                    Text("Settings")
+                        .font(.largeTitle.bold())
+                    
+                    Spacer()
+                    
+                    // Invisible spacer to center the title
+                    Color.clear
+                        .frame(width: 60)
+                }
 
                 // Players / Starting team
                 Group {
@@ -140,6 +163,24 @@ struct IntakeNameView: View {
                 Text("Team B").tag(Team.B)
             }
             .pickerStyle(.segmented)
+
+            Spacer()
+            
+            VStack(spacing: 12) {
+                Image(systemName: "lightbulb.fill")
+                    .font(.title2)
+                    .foregroundStyle(.blue)
+                
+                Text("Game tip: Always start your turn by signaling the number of words in the title!")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+            }
+            .padding(.vertical, 20)
+            .background(Color.blue.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .frame(maxWidth: .infinity)
 
             Spacer()
 

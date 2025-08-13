@@ -9,6 +9,7 @@ struct HomeView: View {
             Text("Wiki-Celebrity")
                 .font(.system(size: 42, weight: .heavy, design: .rounded))
                 .tracking(0.5)
+                .foregroundStyle(.primary)
 
             Text("3 rounds. Same cards. Rules get stricter.")
                 .font(.subheadline)
@@ -26,6 +27,17 @@ struct HomeView: View {
             Spacer()
         }
         .padding(24)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.blue.opacity(0.25),
+                    Color.purple.opacity(0.15),
+                    Color.cyan.opacity(0.2)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .transition(.opacity.combined(with: .scale))
     }
 }
@@ -60,7 +72,19 @@ struct HowToView: View {
             .tabViewStyle(.page(indexDisplayMode: .always))
 
             BigButton(title: "Back") { store.goHome(resetAll: false) }
+                .padding(.horizontal, 24)
         }
         .padding(.bottom, 24)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.blue.opacity(0.25),
+                    Color.purple.opacity(0.15),
+                    Color.cyan.opacity(0.2)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
     }
 }

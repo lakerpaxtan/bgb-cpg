@@ -41,12 +41,14 @@ struct OutlineButton: View {
                 .foregroundStyle(tint)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
+                .background(Color.white.opacity(0.001))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(tint, lineWidth: 2)
                 )
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 }
 
