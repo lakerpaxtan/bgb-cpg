@@ -189,5 +189,3 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
 * **Accessibility**: add VoiceOver labels to Turn view controls and chips.
 
 ---
-
-That’s it—concise rules for players, and a technical roadmap for anyone reading the code. If you want these saved as `README.md` and `APP_FLOW.md` with a tiny file header and table of contents, I can format and drop those in next.

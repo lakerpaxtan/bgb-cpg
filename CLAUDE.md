@@ -6,6 +6,8 @@ Remember to always keep code clean and concise.
 
 Let's also remember to put logs that explain the logical flow of the code to anyone watching logs while running the app. The user is new to swift and iOS development and adding logs to the code to explain the general app_flow (see APP_FLOW.md) will help debug things 
 
+Also always remember to update app_flow / claude_md / outstanding problems when done editing things
+
 ## Project Overview
 
 **bgb-cpg** is a SwiftUI iOS party game app implementing "Wiki-Celebrity" - a 3-round progressive guessing game where teams cycle through the same deck with increasingly restrictive rules (Describe → One Word → Charades).

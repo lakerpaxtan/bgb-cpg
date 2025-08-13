@@ -77,7 +77,7 @@ struct PrimerView: View {
                 .font(.title3.weight(.semibold))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
-            Text("You’ll see the title and the chip list of words you can’t say.")
+            Text("You'll see the title. Remember: don't say any words from the title!")
                 .font(.callout)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -127,11 +127,9 @@ struct TurnView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(card.title)
                         .font(.system(size: 32, weight: .bold, design: .rounded))
-
-                    TokenChips(tokens: store.tokens(for: card.title))
-                        .padding(.top, 4)
+                        .multilineTextAlignment(.center)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .center)
                 .padding()
                 .background(Color.white.opacity(0.95))
                 .clipShape(RoundedRectangle(cornerRadius: 18))

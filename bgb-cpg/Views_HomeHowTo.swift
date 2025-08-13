@@ -46,17 +46,17 @@ struct HowToView: View {
     @EnvironmentObject var store: GameStore
 
     let slides: [String] = [
-        "3 rounds. Same cards, rules get stricter.",
-        "Round 1 = Describe (don’t say title parts).",
-        "Round 2 = One Word.",
-        "Round 3 = Charades (no words).",
-        "Timer 60s. Phone tells you who holds it.",
-        "Leading “The/A/An” not required when guessing.",
-        "Note: These slides are placeholders. Final version should include clearer examples and edge-case clarifications for players."
+        "Wiki-Celebrity is a 3-round party game where teams guess titles using the same deck of cards each round.",
+        "Round 1: DESCRIBE\nSay anything except words from the title. No spelling, initials, or rhymes allowed.",
+        "Round 2: ONE WORD\nYou can only say one word per card. Skips allowed until you cycle back to your starting card.",
+        "Round 3: CHARADES\nNo words at all! Use gestures and sounds only. Skips work the same as Round 2.",
+        "The app shows whose turn it is. Hit 'Correct' when teammates guess right. Timer runs for 60 seconds.",
+        "Players enforce the rules themselves. Leading articles like 'The' or 'A' are optional when guessing.",
+        "Cards you skip or time out on go to the bottom. Same deck reshuffles between rounds. Have fun!"
     ]
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 0) {
             TabView {
                 ForEach(slides.indices, id: \.self) { i in
                     Text(slides[i])
@@ -70,6 +70,7 @@ struct HowToView: View {
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
+            .padding(.bottom, 16)
 
             BigButton(title: "Back") { store.goHome(resetAll: false) }
                 .padding(.horizontal, 24)
