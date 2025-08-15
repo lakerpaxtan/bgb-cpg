@@ -13,27 +13,36 @@
 - Timer logic needs to check both `turnActive` AND `!turnPaused` to properly handle pause states
 - New stages (like `turnPaused`) require updates to ContentView switch statement, background colors, and GameStore methods
 
+## Skip Logic and Turn Ending
+- Skip cycle detection should end turns immediately, not just lock skips
+- Obsolete `skipLocked` logic can create confusing UI states - remove entirely when changing flow
+- When deck becomes empty from markCorrect(), immediately call finishTurnToRecap() for smooth UX
+
+## Bonus Time System Implementation
+- Track bonus player and time in private GameStore properties, reset on new games/rounds
+- setNextClueGiverIfNeeded() should check for bonus player first before normal team rotation
+- beginTurn() should apply bonus time and clear it immediately after use
+
 ---
 
 # Outstanding Problems
 # (do not cross off problems without checking with me first)
 
-1. Let's get rid of the loading screen between when player turns where it shows the hand and loads the next view --- I want it to go straight from the screen saying pass to Player X --- to the greyed out screen where you can start whenever you are ready --- so basically just get rid of the "only the clue giver should see the screen" screen with the hand. In addition --- lets add that tip (the only the clue giver should see the screen) --- to the "get ready" start timer greyed out screen. Clarify with me if you are unsure what I mean here
+1. Dont let players submit their names without having a unique name. Also dont let it be blank or just spaces. 
 
-2. When you cycle through all the words from skipping (IE there are still cards left in the deck, but you've gotten back to the beginning of the deck from turn start) --- your turn should end immediately with a notification / confirmation window saying as such 
+2. Change cumulative to total on the round complete screen so both team names fit lol
 
-3. This one is a bit more complicated. If your turn ends from guessing all the words successfully --- you need to actually save down the remaining time for THAT PLAYER, then switch to the next round as usual, but have the same player go again, but start the timer with the remaining time left they had from the previous round.... in addition, if they UNSELECT one of the cards after their turn (after their turn, before the round switches) --- they technically didnt win the round --- so their turn ends as it does from skipping back to the beginning of the deck and the round conitnues with the next player as usual. The idea here is that if you finish the round and make it through all the cards you get rewarded by starting the next round with your remaining time --- but you dont get that if you didnt actually complete all the remaining words (hence the unchecking clause)
+3. Let's add a counter to the main gameplay screen that shows cards left in the deck and how many you've skipped and how many you've marked as correct. You can somehow combine this with the skip explanation you have --- since the number of skips is equal to the number of cards in the deck you have remaining to look through --- make it clear even in round 1 and round 2 though since one doesnt allow skips but you still want to see the counter 
 
-4. Dont let players submit their names without having a unique name. Also dont let it be blank or just spaces. 
+4. Let's move the end turn button on the main gameplay screen to the top near the pause button --- not right next to but in the same row
 
-5. Change cumulative to total on the round complete screen so both team names fit lol
+5. The view player stats screen at the end is weirdly offset --- the Player Stats should be a title at the top and so should the back button --- right now the whole thing starts like 1/3 of the way to the bottom of the screen and there is a weirdly large gap between player stats and the scrolling stats view 
 
-6. Let's add a counter to the main gameplay screen that shows cards left in the deck and how many you've skipped and how many you've marked as correct. You can somehow combine this with the skip explanation you have --- since the number of skips is equal to the number of cards in the deck you have remaining to look through --- make it clear even in round 1 and round 2 though since one doesnt allow skips but you still want to see the counter 
+6. On pause menu let me end game altogether and return to main menu 
 
-7. Let's move the end turn button on the main gameplay screen to the top near the pause button --- not right next to but in the same row
+7. On pause menu create a little settings menu where you can adjust timer in the middle of the game --- mention that all settings changed in that menu will take effect on the round after the current one --- and also implement the part where it takes effect 
 
-8. The view player stats screen at the end is weirdly offset --- the Player Stats should be a title at the top and so should the back button --- right now the whole thing starts like 1/3 of the way to the bottom of the screen and there is a weirdly large gap between player stats and the scrolling stats view 
-
+8. On the word selection screen --- make it so you can hit the whole card to trigger selection --- no need to make people aim and target the little circle 
 ---
 
 # Completed Problems
@@ -81,3 +90,15 @@
 21. ~~Add pause button to main gameplay screen with pause view~~ ✅
 
 22. ~~Add end turn button with confirmation alert~~ ✅
+
+23. ~~Remove primer screen and go directly from turnHandoff to turnReady with clue giver tip~~ ✅
+
+24. ~~Auto-end turn when skipping cycles back to start card with confirmation screen~~ ✅
+
+25. ~~Implement bonus time system for completing all cards in a round~~ ✅
+
+26. ~~Auto-end turn immediately when completing last card~~ ✅
+
+27. ~~Create gray confirmation screen for skip cycle completion~~ ✅
+
+28. ~~Fix skip logic bug and remove obsolete skip locking~~ ✅

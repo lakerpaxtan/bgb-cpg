@@ -52,8 +52,8 @@ struct TurnHandoffView: View {
                 .foregroundStyle(.secondary)
                 .padding(.top, 4)
 
-            BigButton(title: "I’m \(store.clueGiver?.name ?? "Next") — Show Controls",
-                      action: { store.showPrimer() },
+            BigButton(title: "I'm \(store.clueGiver?.name ?? "Next") — Get Ready",
+                      action: { store.stage = .turnReady },
                       fill: store.currentTeam.color)
 
             Spacer()
@@ -156,6 +156,23 @@ struct TurnReadyView: View {
                 BigButton(title: "Start Timer", action: {
                     store.beginTurn()
                 }, fill: store.currentTeam.color)
+                
+                VStack(spacing: 8) {
+                    Image(systemName: "eye.slash")
+                        .font(.title3)
+                        .foregroundStyle(.orange)
+                    
+                    Text("Only the clue-giver should see the screen")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                }
+                .padding(.vertical, 16)
+                .background(Color.orange.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .frame(maxWidth: .infinity)
+                .padding(.top, 8)
             }
             .padding(32)
             .background(Color.white.opacity(0.95))
@@ -195,8 +212,6 @@ struct TurnView: View {
                 Group {
                     if store.currentRound == .one {
                         Text("Skip: Off")
-                    } else if store.skipLocked {
-                        Text("Back at start — Skip off")
                     } else {
                         Text("Skip until start card")
                     }
@@ -238,7 +253,7 @@ struct TurnView: View {
                         OutlineButton(title: "Skip") {
                             store.skipCard()
                         }
-                        .disabled(store.skipLocked || store.deck.isEmpty)
+                        .disabled(store.deck.isEmpty)
                     }
                     BigButton(title: "Correct",
                               action: { store.markCorrect() },
@@ -263,6 +278,92 @@ struct TurnView: View {
             }
         } message: {
             Text("You can't undo this action. Your turn will end immediately.")
+        }
+    }
+}
+
+// MARK: - Turn Skip Complete
+
+struct TurnSkipCompleteView: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        ZStack {
+            // Blurred background showing the turn content
+            VStack(alignment: .leading, spacing: 14) {
+                // Header (blurred)
+                HStack {
+                    Text("\(store.timeRemaining)s")
+                        .font(.system(size: 40, weight: .heavy, design: .rounded))
+                        .foregroundStyle(store.currentTeam.color.opacity(0.3))
+                        .monospacedDigit()
+
+                    Spacer()
+
+                    Text("Turn Complete")
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(Color.black.opacity(0.03))
+                        .clipShape(Capsule())
+                }
+
+                Divider().opacity(0.3)
+
+                // Card area (blurred)
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("████████")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding()
+                .background(Color.white.opacity(0.5))
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .shadow(color: .black.opacity(0.03), radius: 8, y: 6)
+
+                Spacer()
+
+                // Placeholder buttons (disabled/blurred)
+                VStack(spacing: 12) {
+                    HStack(spacing: 12) {
+                        if store.currentRound != .one {
+                            OutlineButton(title: "Skip") {}
+                                .disabled(true)
+                                .opacity(0.4)
+                        }
+                        BigButton(title: "Correct", action: {}, fill: .green)
+                            .disabled(true)
+                            .opacity(0.4)
+                    }
+                    
+                    OutlineButton(title: "End Turn") {}
+                        .disabled(true)
+                        .opacity(0.4)
+                }
+            }
+            .padding(24)
+            .blur(radius: 3)
+            
+            // Center confirmation
+            VStack(spacing: 16) {
+                Text("Turn Complete")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.primary)
+                
+                Text("You've cycled through all cards")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                
+                BigButton(title: "Continue to Recap", action: {
+                    store.proceedFromSkipComplete()
+                }, fill: store.currentTeam.color)
+            }
+            .padding(32)
+            .background(Color.white.opacity(0.95))
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: .black.opacity(0.1), radius: 12, y: 8)
         }
     }
 }
@@ -302,7 +403,7 @@ struct RecapView: View {
 
             Spacer()
 
-            BigButton(title: "Hand the phone to next — I’m \(store.currentTeam == .A ? (store.teamBOrder.first?.name ?? "Next") : (store.teamAOrder.first?.name ?? "Next"))") {
+            BigButton(title: "Done Reviewing") {
                 store.recapDoneNextHandoff()
             }
         }

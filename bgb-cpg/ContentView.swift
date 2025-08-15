@@ -30,14 +30,14 @@ struct ContentView: View {
                 RoundIntroView()
             case .turnHandoff:
                 TurnHandoffView()
-            case .primer:
-                PrimerView()
             case .turnReady:
                 TurnReadyView()
             case .turn:
                 TurnView()
             case .turnPaused:
                 TurnPausedView()
+            case .turnSkipComplete:
+                TurnSkipCompleteView()
             case .recap:
                 RecapView()
             case .roundEnd:

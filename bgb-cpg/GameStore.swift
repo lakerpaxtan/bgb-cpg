@@ -58,6 +58,10 @@ final class GameStore: ObservableObject {
     @Published var selectedPicks: Set<UUID> = []
     @Published var showingRestartConfirmation: Bool = false
     @Published var showingEndTurnConfirmation: Bool = false
+    
+    // Bonus time tracking for completing all cards
+    private var savedBonusTime: Int = 0
+    private var bonusTimePlayer: Player? = nil
 
     // UI helpers
     var backgroundColors: [Color] {
@@ -66,9 +70,9 @@ final class GameStore: ObservableObject {
             return [Color.white, Color(white: 0.95)]
         case .settings, .intakeHandoff, .intakeName, .intakePicks:
             return [Color(.systemTeal).opacity(0.12), Color(.systemBlue).opacity(0.10)]
-        case .roundIntro, .turnHandoff, .primer, .turnReady:
+        case .roundIntro, .turnHandoff, .turnReady:
             return [currentTeam.color.opacity(0.12), Color(.systemGray6)]
-        case .turn, .turnPaused:
+        case .turn, .turnPaused, .turnSkipComplete:
             return [currentTeam.color.opacity(0.18), .white]
         case .recap:
             return [Color(.systemGray6), .white]
@@ -93,6 +97,8 @@ final class GameStore: ObservableObject {
             cumulativeA = 0
             cumulativeB = 0
             playerStats = [:]
+            savedBonusTime = 0
+            bonusTimePlayer = nil
             currentRound = .one
             currentTeam = settings.startingTeam
         }
@@ -125,6 +131,8 @@ final class GameStore: ObservableObject {
         allCards = []
         deck = []
         playerStats = [:]
+        savedBonusTime = 0
+        bonusTimePlayer = nil
         currentRound = .one
         currentTeam = settings.startingTeam
 
@@ -306,6 +314,13 @@ final class GameStore: ObservableObject {
     }
 
     func setNextClueGiverIfNeeded() {
+        // Check if we have a bonus time player who should go first
+        if let bonusPlayer = bonusTimePlayer {
+            clueGiver = bonusPlayer
+            currentTeam = bonusPlayer.team
+            return
+        }
+        
         // Pick next in team rotation; alternate teams each turn
         let order = (currentTeam == .A) ? teamAOrder : teamBOrder
         guard !order.isEmpty else {
@@ -333,14 +348,6 @@ final class GameStore: ObservableObject {
 
     // MARK: - Turn lifecycle
 
-    func showPrimer() {
-        stage = .primer
-        Haptics.soft()
-        // auto-advance to ready screen after ~2 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
-            self.stage = .turnReady
-        }
-    }
 
     func beginTurn() {
         guard !deck.isEmpty else {
@@ -350,7 +357,17 @@ final class GameStore: ObservableObject {
         thisTurnCorrect = []
         skipCount = 0
         skipLocked = false
-        timeRemaining = settings.timerSeconds
+        
+        // Use bonus time if this player completed the previous round
+        if let bonusPlayer = bonusTimePlayer, bonusPlayer.id == clueGiver?.id, savedBonusTime > 0 {
+            timeRemaining = savedBonusTime
+            // Clear the bonus after using it
+            savedBonusTime = 0
+            bonusTimePlayer = nil
+        } else {
+            timeRemaining = settings.timerSeconds
+        }
+        
         startCardID = deck.first?.id
         cardShownAt = Date()
         turnActive = true
@@ -404,6 +421,10 @@ final class GameStore: ObservableObject {
     func cancelEndTurn() {
         showingEndTurnConfirmation = false
     }
+    
+    func proceedFromSkipComplete() {
+        finishTurnToRecap()
+    }
 
     func markCorrect() {
         guard turnActive, !deck.isEmpty else { return }
@@ -423,14 +444,13 @@ final class GameStore: ObservableObject {
 
         Haptics.success()
 
-        // If the start card was just answered, lock skips for R2/R3
-        if current.id == startCardID, currentRound != .one {
-            skipLocked = true
-        }
-
-        // If deck empty → round end flow will happen after recap
+        // If deck empty → player completed all cards! End turn immediately
         if deck.isEmpty {
-            // do nothing here; recap still runs
+            // Save their remaining time for next round
+            savedBonusTime = timeRemaining
+            bonusTimePlayer = clueGiver
+            // End turn immediately like timer ran out
+            finishTurnToRecap()
         } else {
             // Show next card
             cardShownAt = Date()
@@ -450,9 +470,11 @@ final class GameStore: ObservableObject {
         skipCount += 1
         Haptics.tap()
 
-        // If we cycled back to the starting card, lock
+        // If we cycled back to the starting card, show completion screen
         if deck.first?.id == startCardID {
             skipLocked = true
+            turnActive = false // Stop the timer
+            stage = .turnSkipComplete
             Haptics.soft()
         }
 
@@ -535,6 +557,12 @@ final class GameStore: ObservableObject {
                 updatedStats.totalTurnTime = max(0, updatedStats.totalTurnTime - ev.duration)
                 playerStats[clueGiver.id] = updatedStats
             }
+        }
+        
+        // If there were untoggled cards and this player had bonus time, remove the bonus
+        if !untoggled.isEmpty && bonusTimePlayer?.id == clueGiver?.id {
+            savedBonusTime = 0
+            bonusTimePlayer = nil
         }
         
         // Clear this turn's events
@@ -640,6 +668,10 @@ final class GameStore: ObservableObject {
         for playerId in playerStats.keys {
             playerStats[playerId] = PlayerStats(playerId: playerId)
         }
+        
+        // Reset bonus time
+        savedBonusTime = 0
+        bonusTimePlayer = nil
         
         currentRound = .one
         deck = []
