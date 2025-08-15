@@ -45,6 +45,8 @@
 8. On the word selection screen --- make it so you can hit the whole card to trigger selection --- no need to make people aim and target the little circle 
 
 9. On turn handoff page shortern the Skips explanation. Same message just shorter. 
+
+10. BIG one --- the idea behind your turn ending when you skip all the way back to the beginning --- is that you cannot skip past where the beginning card WOULD HAVE BEEN if you didnt skip / complete it --- you have implemented it such that you are checking for the start card to see if you skipped all the way back to the beginning --- but what if the player gets the start card correctly and we remove it from the deck? As the logic stands -- the player can then skip back all the way through the deck inifinitely because we will never see the start card again. There are two ways to fix this --- you can either continually change the "start card" by changing it to the "first skipped card of the round" rather than the start card --- or you can just count the number of completed / skips and when you reach the length of the deck (as if you've gone back to the start) end the round --- which should be equivalent. First, verify these are equivalent logically --- then if they are --- implement it using the count method since I think that's more obvious. Also really make sure to adjust the readme / claude / app flow when you are done with this one. 
 ---
 
 # Completed Problems
