@@ -34,7 +34,7 @@
 
 3. Let's add a counter to the main gameplay screen that shows cards left in the deck and how many you've skipped and how many you've marked as correct. You can somehow combine this with the skip explanation you have --- since the number of skips is equal to the number of cards in the deck you have remaining to look through --- make it clear even in round 1 and round 2 though since one doesnt allow skips but you still want to see the counter 
 
-4. Let's move the end turn button on the main gameplay screen to the top near the pause button --- not right next to but in the same row
+4. Let's move the end turn button on the main gameplay screen to the top near the pause button --- not right next to but in the same row. also make sure to make these static size and not being shifted around by the timer changing its length (since its the same row if its not static then itll be pushed around when timer changes width)
 
 5. The view player stats screen at the end is weirdly offset --- the Player Stats should be a title at the top and so should the back button --- right now the whole thing starts like 1/3 of the way to the bottom of the screen and there is a weirdly large gap between player stats and the scrolling stats view 
 
