@@ -23,11 +23,11 @@ Skips: **Not allowed**.
 
 **Round 2 — One Word**
 You may say **one word only** per card.
-Skips: **Allowed** until you cycle back to your starting card for that turn, then Skip turns off.
+Skips: **Allowed** until you cycle back to your starting card for that turn, then **your turn ends automatically**.
 
 **Round 3 — Charades**
 **No words**. Non-verbal sounds and gestures are OK.
-Skips: **Allowed** until you cycle back to your starting card for that turn, then Skip turns off.
+Skips: **Allowed** until you cycle back to your starting card for that turn, then **your turn ends automatically**.
 
 ---
 
@@ -35,6 +35,8 @@ Skips: **Allowed** until you cycle back to your starting card for that turn, the
 
 * The app tells you who holds the phone each turn.
 * Hit **Correct** when the guessers get it.
+* **Complete all cards** in your turn → save your remaining time as **bonus time** for your next turn!
+* **Pause button** lets you pause mid-turn; **End Turn** button lets you end early with confirmation.
 * **Timer end**: the current card is pushed to the bottom automatically and a recap opens.
 * **Turn Recap**: only **read out loud** the highlighted correct answers; you can toggle highlight.
 * **Undo** on a recap removes that correct, **reinserts the card** at its prior position for this round, and reduces the score.
@@ -54,7 +56,7 @@ Skips: **Allowed** until you cycle back to your starting card for that turn, the
 ## Skips (detail)
 
 * **Round 1**: none (Skip hidden).
-* **Rounds 2–3**: Skips are unlimited **until** the deck cycles back to the **starting card of your turn**; after that, Skip turns off.
+* **Rounds 2–3**: Skips are unlimited **until** the deck cycles back to the **starting card of your turn**; then **your turn ends automatically** with a confirmation screen.
 
 ---
 
@@ -78,5 +80,6 @@ Skips: **Allowed** until you cycle back to your starting card for that turn, the
 ## Notes
 
 * Timer default is **60s**.
+* **Player Statistics** are tracked throughout the game and displayed at the end showing turns taken, correct answers, and timing data.
 * Haptics on key actions; clean, minimal UI in a Letterpress-like style.
 * Tiny rule reminder: leading **The/A/An** is optional when guessing.

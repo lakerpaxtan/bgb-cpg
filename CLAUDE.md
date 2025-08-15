@@ -66,15 +66,19 @@ bgb_cpgApp → ContentView → Stage-based View Routing → GameStore methods �
 - **Purpose**: Central state manager and business logic
 - **Key responsibilities**: 
   - Game state (stage, settings, players, deck, scores)
-  - Turn lifecycle (timer, skip rules, scoring)
+  - Turn lifecycle (timer, pause/unpause, skip rules, scoring)
   - Player intake pipeline (candidate generation, de-duplication)
   - Round transitions and deck management
+  - Bonus time system (flow time for completing all cards)
+  - Player statistics tracking and display
 - **Main state**: `@Published` properties for stage, settings, players, deck, scores
+- **Private state**: Bonus time tracking (`savedBonusTime`, `bonusTimePlayer`)
 
 #### 2. GameModels.swift  
 - **Purpose**: Core data types and game logic
-- **Key types**: `Team`, `Stage`, `RoundPhase`, `Settings`, `Player`, `Card`, `Token`
+- **Key types**: `Team`, `Stage`, `RoundPhase`, `Settings`, `Player`, `Card`, `Token`, `PlayerStats`
 - **Enums**: Define game phases, team colors, round rules, skip policies
+- **New stages**: `turnPaused`, `turnSkipComplete`, `gameStats` for enhanced turn control
 
 #### 3. ContentView.swift
 - **Purpose**: Main view router based on `store.stage`
@@ -100,15 +104,18 @@ Organized by feature area:
 ### State Machine Flow
 ```
 .home → .settings → .intakeHandoff → .intakeName → .intakePicks → .roundIntro → 
-.turnHandoff → .primer → .turn → .recap → (.turnHandoff | .roundEnd) → 
-(.roundIntro | .gameEnd) → (.home | .roundIntro)
+.turnHandoff → .turn → (.turnPaused | .turnSkipComplete | .recap) → 
+(.turnHandoff | .roundEnd) → (.roundIntro | .gameEnd) → (.gameStats | .home | .roundIntro)
 ```
 
 ### Key Game Rules Implementation
 - **Deck consistency**: Same cards used across all 3 rounds, reshuffled between rounds
-- **Skip logic**: Rounds 2-3 allow skips until cycling back to starting card, then disabled
+- **Skip logic**: Rounds 2-3 allow skips until cycling back to starting card, then **turn auto-ends** with confirmation
+- **Bonus time system**: Complete all cards in a turn → save remaining time for next round with priority queue
+- **Auto-end triggers**: Turn ends when (1) timer expires, (2) skip cycles to start card, (3) all cards completed, (4) manual end
 - **Token system**: Title words broken into "no-say" chips with special handling for articles (The/A/An)
 - **Scoring**: Cumulative across rounds with per-round breakdowns
+- **Player statistics**: Real-time tracking of turns, correct answers, fastest/slowest times
 
 ## File Organization
 
@@ -129,6 +136,13 @@ bgb-cpg/
 ```
 
 ## Development Notes
+
+### Documentation Maintenance
+**CRITICAL**: After making ANY code changes, ALWAYS update documentation to keep it current:
+- **README.md**: Update game rules, new features, user-facing behavior
+- **CLAUDE.md**: Update architecture, state flows, component descriptions  
+- **APP_FLOW.md**: Update technical flow, state machine, data patterns
+- Check that all three files accurately reflect the current implementation
 
 ### UI Framework
 - **SwiftUI-only** implementation with iOS 18.5+ target
@@ -152,8 +166,9 @@ bgb-cpg/
 
 ### Adding New Game Rules
 1. Update `RoundPhase` enum in `GameModels.swift` for rule text
-2. Implement logic in `GameStore` turn methods (`markCorrect`, `skipCard`, etc.)
+2. Implement logic in `GameStore` turn methods (`markCorrect`, `skipCard`, `pauseTurn`, etc.)
 3. Update UI in relevant `Views_*.swift` files
+4. Consider impact on bonus time system and player statistics
 
 ### Adding New View Stages
 1. Add case to `Stage` enum in `GameModels.swift`
@@ -165,3 +180,4 @@ bgb-cpg/
 1. Update player collection logic in `GameStore` intake methods
 2. Modify candidate generation in `TitleBank` if needed
 3. Update UI flow in `Views_SettingsIntake.swift`
+4. Initialize `PlayerStats` for new players in `submitPlayerAndPicks()`

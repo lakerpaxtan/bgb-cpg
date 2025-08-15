@@ -43,6 +43,8 @@
 7. On pause menu create a little settings menu where you can adjust timer in the middle of the game --- mention that all settings changed in that menu will take effect on the round after the current one --- and also implement the part where it takes effect 
 
 8. On the word selection screen --- make it so you can hit the whole card to trigger selection --- no need to make people aim and target the little circle 
+
+9. On turn handoff page shortern the Skips explanation. Same message just shorter. 
 ---
 
 # Completed Problems

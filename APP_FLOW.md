@@ -29,11 +29,13 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
     * `.intakePicks` → `IntakePicksView`
     * `.roundIntro` → `RoundIntroView`
     * `.turnHandoff` → `TurnHandoffView`
-    * `.primer` → `PrimerView`
+    * `.turnPaused` → `TurnPausedView`
+    * `.turnSkipComplete` → `TurnSkipCompleteView`
     * `.turn` → `TurnView`
     * `.recap` → `RecapView`
     * `.roundEnd` → `RoundEndView`
     * `.gameEnd` → `GameEndView`
+    * `.gameStats` → `GameStatsView`
 
 ---
 
@@ -107,18 +109,21 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
   * Sets next `clueGiver` based on team rotation.
   * Stage → `.turnHandoff`.
 
-* `TurnHandoffView` → **I’m {ClueGiver} — Show Controls** → `store.showPrimer()` → `.primer` → auto advance to `.turn`.
+* `TurnHandoffView` → **I'm {ClueGiver} — Start Turn** → `store.beginTurn()` → `.turn`.
 
 ### 4) Turn
 
 * `TurnView` starts the timer (`Timer.publish`) in `store.beginTurn()`:
 
-  * `startCardID` = current top card; `skipLocked = false`.
+  * `startCardID` = current top card; tracks skip cycle completion.
+  * **Bonus time**: If player completed all cards previous round, uses saved time instead of default.
   * **Correct** → `store.markCorrect()`:
 
-    * Removes current top; records `CorrectEvent` (with duration).
-    * If that card equals `startCardID` in R2/R3 → lock Skip.
-  * **Skip** (R2/R3 only, while unlocked) → move top card to bottom; increment skip count; if next top equals `startCardID` → lock.
+    * Removes current top; records `CorrectEvent` (with duration + player stats).
+    * If deck empty → save remaining time as bonus, end turn immediately.
+  * **Skip** (R2/R3 only) → move top card to bottom; if next top equals `startCardID` → auto-end turn via `.turnSkipComplete`.
+  * **Pause** → `store.pauseTurn()` → `.turnPaused` (can unpause or end turn).
+  * **End Turn** → confirmation → `store.finishTurnToRecap()`.
   * **Timer end** → `store.finishTurnToRecap()`:
 
     * Push current top to bottom.
@@ -157,9 +162,13 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
 .settings
   → .intakeHandoff
 .intakeHandoff → .intakeName → .intakePicks → (repeat) … → .roundIntro
-.roundIntro → .turnHandoff → .primer → .turn → .recap → (.turnHandoff | .roundEnd)
+.roundIntro → .turnHandoff → .turn → (.turnPaused | .turnSkipComplete | .recap)
+.turnPaused → (.turn | .recap)
+.turnSkipComplete → .recap
+.recap → (.turnHandoff | .roundEnd)
 .roundEnd → (.roundIntro | .gameEnd)
-.gameEnd → (.roundIntro via Rematch | .home via New Game)
+.gameEnd → (.gameStats | .roundIntro via Rematch | .home via New Game)
+.gameStats → .gameEnd
 ```
 
 ---
@@ -168,8 +177,10 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
 
 * **Single source of truth**: `GameStore` holds settings, players, deck, scores, timers.
 * **Deck** is rebuilt only between rounds, never during; order is stable within a round.
-* **Skips** follow round rules; “lock” after cycling back to starting card in R2/R3.
-* **Undo** reverts both deck position and score.
+* **Skips** follow round rules; auto-end turn after cycling back to starting card in R2/R3.
+* **Bonus time** system rewards completing all cards with saved time for next round.
+* **Player statistics** track all turns, correct answers, and timing data throughout game.
+* **Undo** reverts both deck position and score (and removes bonus if cards untoggled).
 * **Token chips** come from `GameStore.tokens(for:)` (split on non-alphanumerics; leading article optional per `settings.acceptance`).
 
 ---
@@ -184,8 +195,9 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
 
 ## Extending the App (where to plug in)
 
-* **More stats**: store a per-turn log in `GameStore` and compute highlights across all turns.
+* **Enhanced stats**: current system tracks per-player stats; could expand to per-turn event logs.
 * **Real Wikipedia fetch**: swap `TitleBank` for a service; keep `TitleFilter` rules.
 * **Accessibility**: add VoiceOver labels to Turn view controls and chips.
+* **Bonus time variations**: could implement team-based or cumulative bonus systems.
 
 ---
