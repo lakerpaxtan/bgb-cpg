@@ -18,7 +18,7 @@ enum Team: String, Codable, CaseIterable {
 enum Stage {
     case home, howTo, settings
     case intakeHandoff, intakeName, intakePicks
-    case roundIntro, turnHandoff, primer, turnReady, turn, recap, roundEnd, gameEnd
+    case roundIntro, turnHandoff, primer, turnReady, turn, turnPaused, recap, roundEnd, gameEnd, gameStats
 }
 
 enum RoundPhase: Int, Codable {
@@ -118,6 +118,44 @@ struct Player: Identifiable, Hashable, Codable {
         self.id = id
         self.name = name
         self.team = team
+    }
+}
+
+// Player Statistics
+struct PlayerStats: Identifiable, Codable {
+    let id: UUID // matches Player.id
+    var totalCorrectAnswers: Int = 0
+    var totalTurnTime: TimeInterval = 0
+    var turnsAsClueGiver: Int = 0
+    var fastestAnswer: TimeInterval? = nil
+    var slowestAnswer: TimeInterval? = nil
+    var averageAnswerTime: TimeInterval { 
+        totalCorrectAnswers > 0 ? totalTurnTime / TimeInterval(totalCorrectAnswers) : 0
+    }
+    
+    init(playerId: UUID) {
+        self.id = playerId
+    }
+    
+    mutating func addCorrectAnswer(duration: TimeInterval) {
+        totalCorrectAnswers += 1
+        totalTurnTime += duration
+        
+        if let current = fastestAnswer {
+            fastestAnswer = min(current, duration)
+        } else {
+            fastestAnswer = duration
+        }
+        
+        if let current = slowestAnswer {
+            slowestAnswer = max(current, duration)
+        } else {
+            slowestAnswer = duration
+        }
+    }
+    
+    mutating func addTurn() {
+        turnsAsClueGiver += 1
     }
 }
 

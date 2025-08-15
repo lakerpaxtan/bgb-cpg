@@ -167,10 +167,10 @@ struct IntakeNameView: View {
 
             Spacer()
             
-            VStack(spacing: 12) {
+            VStack(spacing: 8) {
                 Image(systemName: "lightbulb.fill")
-                    .font(.title2)
-                    .foregroundStyle(.blue)
+                    .font(.title3)
+                    .foregroundStyle(.orange)
                 
                 Text("Game tip: Always start your turn by signaling the number of words in the title!")
                     .font(.subheadline)
@@ -178,8 +178,8 @@ struct IntakeNameView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 8)
             }
-            .padding(.vertical, 20)
-            .background(Color.blue.opacity(0.08))
+            .padding(.vertical, 16)
+            .background(Color.orange.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .frame(maxWidth: .infinity)
 
@@ -227,13 +227,29 @@ struct IntakePicksView: View {
             }
 
             VStack(spacing: 12) {
-                BigButton(title: "Review & Submit") {
-                    guard store.selectedPicks.count == store.settings.picksPerPlayer else {
-                        Haptics.warning(); return
-                    }
+                let isCorrectCount = store.selectedPicks.count == store.settings.picksPerPlayer
+                let buttonTitle = isCorrectCount ? "Submit" : "Please select exactly \(store.settings.picksPerPlayer) titles"
+                
+                BigButton(title: buttonTitle) {
                     store.submitPlayerAndPicks()
                 }
-                .disabled(store.selectedPicks.count != store.settings.picksPerPlayer)
+                .disabled(!isCorrectCount)
+                
+                VStack(spacing: 8) {
+                    Image(systemName: "lightbulb.fill")
+                        .font(.title3)
+                        .foregroundStyle(.orange)
+                    
+                    Text("Remember your selected titles! Your team gains an advantage when only you know which cards are coming up.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                }
+                .padding(.vertical, 16)
+                .background(Color.orange.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .frame(maxWidth: .infinity)
                 
                 RestartButton()
                     .padding(.top, 4)

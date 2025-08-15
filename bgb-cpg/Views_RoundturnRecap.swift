@@ -180,6 +180,16 @@ struct TurnView: View {
                     .monospacedDigit()
 
                 Spacer()
+                
+                // Pause button
+                Button(action: {
+                    store.pauseTurn()
+                }) {
+                    Image(systemName: "pause.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
 
                 // Skip status badge
                 Group {
@@ -222,21 +232,38 @@ struct TurnView: View {
 
             Spacer()
 
-            HStack(spacing: 12) {
-                if store.currentRound != .one {
-                    OutlineButton(title: "Skip") {
-                        store.skipCard()
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    if store.currentRound != .one {
+                        OutlineButton(title: "Skip") {
+                            store.skipCard()
+                        }
+                        .disabled(store.skipLocked || store.deck.isEmpty)
                     }
-                    .disabled(store.skipLocked || store.deck.isEmpty)
+                    BigButton(title: "Correct",
+                              action: { store.markCorrect() },
+                              fill: .green)
+                    .disabled(store.deck.isEmpty)
                 }
-                BigButton(title: "Correct",
-                          action: { store.markCorrect() },
-                          fill: .green)
+                
+                OutlineButton(title: "End Turn") {
+                    store.showEndTurnConfirmation()
+                }
                 .disabled(store.deck.isEmpty)
             }
         }
         .padding(24)
         .onDisappear { /* defensive */ }
+        .alert("End Turn?", isPresented: $store.showingEndTurnConfirmation) {
+            Button("Cancel", role: .cancel) {
+                store.cancelEndTurn()
+            }
+            Button("End Turn", role: .destructive) {
+                store.confirmEndTurn()
+            }
+        } message: {
+            Text("You can't undo this action. Your turn will end immediately.")
+        }
     }
 }
 
@@ -290,5 +317,82 @@ struct RecapView: View {
                 store.thisTurnCorrect[idx].highlighted = new
             }
         })
+    }
+}
+
+// MARK: - Turn Paused
+
+struct TurnPausedView: View {
+    @EnvironmentObject var store: GameStore
+
+    var body: some View {
+        ZStack {
+            // Blurred background showing the paused turn content
+            VStack(alignment: .leading, spacing: 14) {
+                // Header (blurred)
+                HStack {
+                    Text("\(store.timeRemaining)s")
+                        .font(.system(size: 40, weight: .heavy, design: .rounded))
+                        .foregroundStyle(store.currentTeam.color.opacity(0.3))
+                        .monospacedDigit()
+
+                    Spacer()
+
+                    Text("Paused")
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(Color.black.opacity(0.03))
+                        .clipShape(Capsule())
+                }
+
+                Divider().opacity(0.3)
+
+                // Card area (blurred)
+                if let card = store.deck.first {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Game is paused")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
+                    .background(Color.white.opacity(0.5))
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .shadow(color: .black.opacity(0.03), radius: 8, y: 6)
+                }
+
+                Spacer()
+
+                // Placeholder buttons (disabled/blurred)
+                HStack(spacing: 12) {
+                    if store.currentRound != .one {
+                        OutlineButton(title: "Skip") {}
+                            .disabled(true)
+                            .opacity(0.4)
+                    }
+                    BigButton(title: "Correct", action: {}, fill: .green)
+                        .disabled(true)
+                        .opacity(0.4)
+                }
+            }
+            .padding(24)
+            .blur(radius: 3)
+            
+            // Center unpause button
+            VStack(spacing: 16) {
+                Text("Game Paused")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.primary)
+                
+                BigButton(title: "Unpause", action: {
+                    store.unpauseTurn()
+                }, fill: store.currentTeam.color)
+            }
+            .padding(32)
+            .background(Color.white.opacity(0.95))
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: .black.opacity(0.1), radius: 12, y: 8)
+        }
     }
 }

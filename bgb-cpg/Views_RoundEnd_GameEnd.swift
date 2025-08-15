@@ -120,7 +120,11 @@ struct GameEndView: View {
 
                 Spacer()
 
-                BigButton(title: "Rematch (same settings)") {
+                BigButton(title: "View Player Stats") {
+                    store.showGameStats()
+                }
+
+                OutlineButton(title: "Rematch (same settings)") {
                     store.rematchSameSettings()
                 }
 
@@ -139,6 +143,125 @@ struct GameEndView: View {
                         }
                     }
             }
+        }
+    }
+}
+
+struct GameStatsView: View {
+    @EnvironmentObject var store: GameStore
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Button(action: {
+                    store.hideGameStats()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Back")
+                            .font(.system(size: 17))
+                    }
+                    .foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
+                
+                Spacer()
+                
+                Text("Player Stats")
+                    .font(.largeTitle.bold())
+                
+                Spacer()
+                
+                // Invisible spacer to center the title
+                Color.clear
+                    .frame(width: 60)
+            }
+            
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    ForEach(store.players.sorted { $0.name < $1.name }) { player in
+                        PlayerStatsCard(player: player, stats: store.playerStats[player.id])
+                    }
+                }
+            }
+            
+            BigButton(title: "Done") {
+                store.hideGameStats()
+            }
+            .padding(.top, 8)
+        }
+        .padding(24)
+    }
+}
+
+struct PlayerStatsCard: View {
+    let player: Player
+    let stats: PlayerStats?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Circle()
+                    .fill(player.team.color)
+                    .frame(width: 12, height: 12)
+                
+                Text(player.name)
+                    .font(.headline.bold())
+                
+                Spacer()
+                
+                Text(player.team.name)
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(player.team.color.opacity(0.12))
+                    .clipShape(Capsule())
+                    .foregroundStyle(player.team.color)
+            }
+            
+            if let stats = stats {
+                VStack(alignment: .leading, spacing: 8) {
+                    StatRow(label: "Correct Answers", value: "\(stats.totalCorrectAnswers)")
+                    StatRow(label: "Turns as Clue Giver", value: "\(stats.turnsAsClueGiver)")
+                    
+                    if stats.totalCorrectAnswers > 0 {
+                        StatRow(label: "Average Answer Time", value: String(format: "%.1fs", stats.averageAnswerTime))
+                        
+                        if let fastest = stats.fastestAnswer {
+                            StatRow(label: "Fastest Answer", value: String(format: "%.1fs", fastest))
+                        }
+                        
+                        if let slowest = stats.slowestAnswer {
+                            StatRow(label: "Slowest Answer", value: String(format: "%.1fs", slowest))
+                        }
+                    }
+                }
+            } else {
+                Text("No stats available")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(16)
+        .background(Color.white.opacity(0.9))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.04), radius: 6, y: 3)
+    }
+}
+
+struct StatRow: View {
+    let label: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(.caption.bold())
         }
     }
 }

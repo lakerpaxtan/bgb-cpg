@@ -9,20 +9,30 @@
 - Matching gradient backgrounds across views (Home and How to Play) reduces jarring transitions
 - iOS-native back button style: `chevron.left` + "Back" text in blue, more subtle than custom OutlineButton
 
+## Timer and State Management
+- Timer logic needs to check both `turnActive` AND `!turnPaused` to properly handle pause states
+- New stages (like `turnPaused`) require updates to ContentView switch statement, background colors, and GameStore methods
+
 ---
 
 # Outstanding Problems
 # (do not cross off problems without checking with me first)
 
-1. Let's just in general collect stats on players --- times, number of successes --- then at the end of the game lets show a stats screen. This is in addition to the fun stats thing we already have in between rounds (i think we have this --- if we dont add something --- also add it to the app flow or readme if its not there I was having a hard time finding it)
+1. Let's get rid of the loading screen between when player turns where it shows the hand and loads the next view --- I want it to go straight from the screen saying pass to Player X --- to the greyed out screen where you can start whenever you are ready --- so basically just get rid of the "only the clue giver should see the screen" screen with the hand. In addition --- lets add that tip (the only the clue giver should see the screen) --- to the "get ready" start timer greyed out screen. Clarify with me if you are unsure what I mean here
 
-2. Right now it seems like we are doing haptics when you click on more than 3 things in Your Picks --- haptics should indicate good thigns not bad --- so lets do haptics when you select a title at all 
+2. When you cycle through all the words from skipping (IE there are still cards left in the deck, but you've gotten back to the beginning of the deck from turn start) --- your turn should end immediately with a notification / confirmation window saying as such 
 
-3. Let's actually allow players to select more than their allotted X titles in the Your Picks screen --- but when they select too many lets grey out the review and submit button and have it say "Please select exactly X titles" --- and lets similarly do that when you havent selected enough
+3. This one is a bit more complicated. If your turn ends from guessing all the words successfully --- you need to actually save down the remaining time for THAT PLAYER, then switch to the next round as usual, but have the same player go again, but start the timer with the remaining time left they had from the previous round.... in addition, if they UNSELECT one of the cards after their turn (after their turn, before the round switches) --- they technically didnt win the round --- so their turn ends as it does from skipping back to the beginning of the deck and the round conitnues with the next player as usual. The idea here is that if you finish the round and make it through all the cards you get rewarded by starting the next round with your remaining time --- but you dont get that if you didnt actually complete all the remaining words (hence the unchecking clause)
 
-4. Lets change the button on Your Picks screen to just say submit when you are good to submit --- there is no reviewing being done 
+4. Dont let players submit their names without having a unique name. Also dont let it be blank or just spaces. 
 
-5. Let's add a tip somewhere on the "Your Picks" screen that says something along the lines of "Do your best to remember the titles you selected --- It's an advantage for your team that only you know the title to start out!" 
+5. Change cumulative to total on the round complete screen so both team names fit lol
+
+6. Let's add a counter to the main gameplay screen that shows cards left in the deck and how many you've skipped and how many you've marked as correct. You can somehow combine this with the skip explanation you have --- since the number of skips is equal to the number of cards in the deck you have remaining to look through --- make it clear even in round 1 and round 2 though since one doesnt allow skips but you still want to see the counter 
+
+7. Let's move the end turn button on the main gameplay screen to the top near the pause button --- not right next to but in the same row
+
+8. The view player stats screen at the end is weirdly offset --- the Player Stats should be a title at the top and so should the back button --- right now the whole thing starts like 1/3 of the way to the bottom of the screen and there is a weirdly large gap between player stats and the scrolling stats view 
 
 ---
 
@@ -59,3 +69,15 @@
 15. ~~On the player selection screen --- let's have a difficult to press button that says (restart back to settings screen) --- which will take you back to the settings screen if you want to exit~~ ✅
 
 16. ~~Add restart buttons with confirmation to all intake screens (Pass-Around, Enter Name, Your Picks) with shared component~~ ✅
+
+17. ~~Collect stats on players (times, successes) and show stats screen at end of game~~ ✅
+
+18. ~~Fix haptics on Your Picks - trigger on selection, not on error~~ ✅
+
+19. ~~Allow players to select more than allotted titles in Your Picks with dynamic button text~~ ✅
+
+20. ~~Change Your Picks button text to 'Submit' when ready and add tip about remembering titles~~ ✅
+
+21. ~~Add pause button to main gameplay screen with pause view~~ ✅
+
+22. ~~Add end turn button with confirmation alert~~ ✅

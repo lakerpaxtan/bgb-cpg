@@ -36,12 +36,16 @@ struct ContentView: View {
                 TurnReadyView()
             case .turn:
                 TurnView()
+            case .turnPaused:
+                TurnPausedView()
             case .recap:
                 RecapView()
             case .roundEnd:
                 RoundEndView()
             case .gameEnd:
                 GameEndView()
+            case .gameStats:
+                GameStatsView()
             }
         }
         .preferredColorScheme(.light) // keeps the Letterpress vibe

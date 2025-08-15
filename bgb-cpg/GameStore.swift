@@ -24,6 +24,9 @@ final class GameStore: ObservableObject {
     @Published private(set) var roundScores: [Int: RoundScore] = [:] // key = round
     @Published private(set) var cumulativeA: Int = 0
     @Published private(set) var cumulativeB: Int = 0
+    
+    // Player Statistics
+    @Published private(set) var playerStats: [UUID: PlayerStats] = [:]
 
     // Round + turn
     @Published var currentRound: RoundPhase = .one
@@ -33,6 +36,7 @@ final class GameStore: ObservableObject {
     // Turn control
     @Published var timeRemaining: Int = 60
     @Published var turnActive: Bool = false
+    @Published var turnPaused: Bool = false
     @Published var skipLocked: Bool = false
     @Published var skipCount: Int = 0
 
@@ -53,6 +57,7 @@ final class GameStore: ObservableObject {
     @Published var candidateTitles: [Card] = []
     @Published var selectedPicks: Set<UUID> = []
     @Published var showingRestartConfirmation: Bool = false
+    @Published var showingEndTurnConfirmation: Bool = false
 
     // UI helpers
     var backgroundColors: [Color] {
@@ -63,13 +68,13 @@ final class GameStore: ObservableObject {
             return [Color(.systemTeal).opacity(0.12), Color(.systemBlue).opacity(0.10)]
         case .roundIntro, .turnHandoff, .primer, .turnReady:
             return [currentTeam.color.opacity(0.12), Color(.systemGray6)]
-        case .turn:
+        case .turn, .turnPaused:
             return [currentTeam.color.opacity(0.18), .white]
         case .recap:
             return [Color(.systemGray6), .white]
         case .roundEnd:
             return [Color(.systemIndigo).opacity(0.14), .white]
-        case .gameEnd:
+        case .gameEnd, .gameStats:
             return [Color(.systemYellow).opacity(0.18), .white]
         }
     }
@@ -87,6 +92,7 @@ final class GameStore: ObservableObject {
             roundScores = [:]
             cumulativeA = 0
             cumulativeB = 0
+            playerStats = [:]
             currentRound = .one
             currentTeam = settings.startingTeam
         }
@@ -118,6 +124,7 @@ final class GameStore: ObservableObject {
         teamBOrder = []
         allCards = []
         deck = []
+        playerStats = [:]
         currentRound = .one
         currentTeam = settings.startingTeam
 
@@ -217,10 +224,10 @@ final class GameStore: ObservableObject {
     func togglePick(_ id: UUID) {
         if selectedPicks.contains(id) {
             selectedPicks.remove(id)
-        } else if selectedPicks.count < settings.picksPerPlayer {
-            selectedPicks.insert(id)
+            Haptics.tap()
         } else {
-            Haptics.warning()
+            selectedPicks.insert(id)
+            Haptics.tap()
         }
     }
 
@@ -230,6 +237,9 @@ final class GameStore: ObservableObject {
                        team: pendingTeam)
         players.append(p)
         if p.team == .A { teamAOrder.append(p) } else { teamBOrder.append(p) }
+        
+        // Initialize player stats
+        playerStats[p.id] = PlayerStats(playerId: p.id)
 
         // Add picks to shared deck (de-dupe); if we lose any to de-dupe, auto-draw replacements
         var added = 0
@@ -345,13 +355,18 @@ final class GameStore: ObservableObject {
         cardShownAt = Date()
         turnActive = true
         stage = .turn
+        
+        // Track that this player is taking a turn
+        if let clueGiver = clueGiver {
+            playerStats[clueGiver.id]?.addTurn()
+        }
 
         timerCancellable?.cancel()
         timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                if self.timeRemaining > 0 {
+                if self.turnActive && !self.turnPaused && self.timeRemaining > 0 {
                     self.timeRemaining -= 1
                     if self.timeRemaining == 0 {
                         Haptics.rigid()
@@ -361,6 +376,33 @@ final class GameStore: ObservableObject {
             }
 
         Haptics.tap()
+    }
+    
+    func pauseTurn() {
+        guard turnActive && !turnPaused else { return }
+        turnPaused = true
+        stage = .turnPaused
+        Haptics.soft()
+    }
+    
+    func unpauseTurn() {
+        guard turnActive && turnPaused else { return }
+        turnPaused = false
+        stage = .turn
+        Haptics.soft()
+    }
+    
+    func showEndTurnConfirmation() {
+        showingEndTurnConfirmation = true
+    }
+    
+    func confirmEndTurn() {
+        showingEndTurnConfirmation = false
+        finishTurnToRecap()
+    }
+    
+    func cancelEndTurn() {
+        showingEndTurnConfirmation = false
     }
 
     func markCorrect() {
@@ -373,6 +415,11 @@ final class GameStore: ObservableObject {
         // Original index is always 0 here (top of deck)
         let ev = CorrectEvent(card: current, originalIndex: 0, duration: d, highlighted: true)
         thisTurnCorrect.append(ev)
+        
+        // Track correct answer for the clue giver
+        if let clueGiver = clueGiver {
+            playerStats[clueGiver.id]?.addCorrectAnswer(duration: d)
+        }
 
         Haptics.success()
 
@@ -455,6 +502,15 @@ final class GameStore: ObservableObject {
             else { r.teamB = max(0, r.teamB - 1); cumulativeB = max(0, cumulativeB - 1) }
             roundScores[currentRound.rawValue] = r
         }
+        
+        // Update player stats to remove the undone answer
+        if let clueGiver = clueGiver, let stats = playerStats[clueGiver.id] {
+            var updatedStats = stats
+            updatedStats.totalCorrectAnswers = max(0, updatedStats.totalCorrectAnswers - 1)
+            updatedStats.totalTurnTime = max(0, updatedStats.totalTurnTime - ev.duration)
+            playerStats[clueGiver.id] = updatedStats
+        }
+        
         Haptics.warning()
     }
 
@@ -470,6 +526,14 @@ final class GameStore: ObservableObject {
                 if currentTeam == .A { r.teamA = max(0, r.teamA - 1); cumulativeA = max(0, cumulativeA - 1) }
                 else { r.teamB = max(0, r.teamB - 1); cumulativeB = max(0, cumulativeB - 1) }
                 roundScores[currentRound.rawValue] = r
+            }
+            
+            // Remove from player stats as well
+            if let clueGiver = clueGiver, let stats = playerStats[clueGiver.id] {
+                var updatedStats = stats
+                updatedStats.totalCorrectAnswers = max(0, updatedStats.totalCorrectAnswers - 1)
+                updatedStats.totalTurnTime = max(0, updatedStats.totalTurnTime - ev.duration)
+                playerStats[clueGiver.id] = updatedStats
             }
         }
         
@@ -571,6 +635,12 @@ final class GameStore: ObservableObject {
         cumulativeA = 0
         cumulativeB = 0
         roundScores = [:]
+        
+        // Reset player stats but keep player associations
+        for playerId in playerStats.keys {
+            playerStats[playerId] = PlayerStats(playerId: playerId)
+        }
+        
         currentRound = .one
         deck = []
         resetDeckForRound()
@@ -584,6 +654,14 @@ final class GameStore: ObservableObject {
 
     func newGame() {
         goHome(resetAll: true)
+    }
+    
+    func showGameStats() {
+        stage = .gameStats
+    }
+    
+    func hideGameStats() {
+        stage = .gameEnd
     }
 
     // MARK: - Tokenization for "no-say chips"
