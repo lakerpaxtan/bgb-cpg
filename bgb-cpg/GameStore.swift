@@ -2,6 +2,13 @@ import Foundation
 import SwiftUI
 import Combine
 
+enum TurnEndReason {
+    case timerExpired
+    case manual
+    case skipCycleComplete
+    case completedAllCards
+}
+
 @MainActor
 final class GameStore: ObservableObject {
 
@@ -42,7 +49,7 @@ final class GameStore: ObservableObject {
 
     // Tracking
     private var timerCancellable: AnyCancellable?
-    private var startCardID: UUID? = nil
+    private var initialDeckSize: Int = 0
     private var cardShownAt: Date = Date()
     @Published var thisTurnCorrect: [CorrectEvent] = []
 
@@ -368,7 +375,7 @@ final class GameStore: ObservableObject {
             timeRemaining = settings.timerSeconds
         }
         
-        startCardID = deck.first?.id
+        initialDeckSize = deck.count
         cardShownAt = Date()
         turnActive = true
         stage = .turn
@@ -387,7 +394,7 @@ final class GameStore: ObservableObject {
                     self.timeRemaining -= 1
                     if self.timeRemaining == 0 {
                         Haptics.rigid()
-                        self.finishTurnToRecap()
+                        self.finishTurnToRecap(reason: .timerExpired)
                     }
                 }
             }
@@ -415,7 +422,7 @@ final class GameStore: ObservableObject {
     
     func confirmEndTurn() {
         showingEndTurnConfirmation = false
-        finishTurnToRecap()
+        finishTurnToRecap(reason: .manual)
     }
     
     func cancelEndTurn() {
@@ -423,7 +430,24 @@ final class GameStore: ObservableObject {
     }
     
     func proceedFromSkipComplete() {
-        finishTurnToRecap()
+        finishTurnToRecap(reason: .skipCycleComplete)
+    }
+    
+    private func checkTurnEndConditions() {
+        // Check if we've processed all initially available cards
+        if (skipCount + thisTurnCorrect.count >= initialDeckSize) && (skipCount > 0) {
+            // Player has cycled through all cards - end turn
+            skipLocked = true
+            turnActive = false
+            stage = .turnSkipComplete
+            Haptics.soft()
+        } else if deck.isEmpty {
+            // Player completed all remaining cards! End turn immediately
+            // Note: This condition will never happen in skipCard() since it guards against empty deck
+            savedBonusTime = timeRemaining
+            bonusTimePlayer = clueGiver
+            finishTurnToRecap(reason: .completedAllCards)
+        }
     }
 
     func markCorrect() {
@@ -444,15 +468,11 @@ final class GameStore: ObservableObject {
 
         Haptics.success()
 
-        // If deck empty → player completed all cards! End turn immediately
-        if deck.isEmpty {
-            // Save their remaining time for next round
-            savedBonusTime = timeRemaining
-            bonusTimePlayer = clueGiver
-            // End turn immediately like timer ran out
-            finishTurnToRecap()
-        } else {
-            // Show next card
+        // Check for turn end conditions
+        checkTurnEndConditions()
+        
+        // If turn is still active, show next card
+        if turnActive {
             cardShownAt = Date()
         }
     }
@@ -470,22 +490,20 @@ final class GameStore: ObservableObject {
         skipCount += 1
         Haptics.tap()
 
-        // If we cycled back to the starting card, show completion screen
-        if deck.first?.id == startCardID {
-            skipLocked = true
-            turnActive = false // Stop the timer
-            stage = .turnSkipComplete
-            Haptics.soft()
-        }
+        // Check for turn end conditions
+        checkTurnEndConditions()
 
-        // Reset show-time for duration tracking
-        cardShownAt = Date()
+        // If turn is still active, reset show-time for duration tracking
+        if turnActive {
+            cardShownAt = Date()
+        }
     }
 
-    func finishTurnToRecap() {
+    func finishTurnToRecap(reason: TurnEndReason = .manual) {
         // Turn stops; current top card (unfinished) stays and will resume next turn (bottom push on timeout per spec)
         // Spec: "Timer end: auto-opens Turn Recap; current card goes to bottom."
-        if !deck.isEmpty {
+        // Only cycle the card if the timer ran out (player was stuck on it)
+        if reason == .timerExpired && !deck.isEmpty {
             let top = deck.removeFirst()
             deck.append(top)
         }

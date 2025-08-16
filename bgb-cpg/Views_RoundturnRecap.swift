@@ -116,7 +116,7 @@ struct TurnReadyView: View {
                 Divider().opacity(0.3)
 
                 // Card area (blurred)
-                if let card = store.deck.first {
+                if store.deck.first != nil {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Ready to see your card?")
                             .font(.system(size: 24, weight: .bold, design: .rounded))
@@ -449,7 +449,7 @@ struct TurnPausedView: View {
                 Divider().opacity(0.3)
 
                 // Card area (blurred)
-                if let card = store.deck.first {
+                if store.deck.first != nil {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Game is paused")
                             .font(.system(size: 24, weight: .bold, design: .rounded))

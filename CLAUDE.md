@@ -110,9 +110,9 @@ Organized by feature area:
 
 ### Key Game Rules Implementation
 - **Deck consistency**: Same cards used across all 3 rounds, reshuffled between rounds
-- **Skip logic**: Rounds 2-3 allow skips until cycling back to starting card, then **turn auto-ends** with confirmation
+- **Skip logic**: Rounds 2-3 allow skips until processing all initially available cards (skipCount + correctCount ≥ initialDeckSize && skipCount > 0), then **turn auto-ends** with confirmation
 - **Bonus time system**: Complete all cards in a turn → save remaining time for next round with priority queue
-- **Auto-end triggers**: Turn ends when (1) timer expires, (2) skip cycles to start card, (3) all cards completed, (4) manual end
+- **Auto-end triggers**: Turn ends when (1) timer expires, (2) processed all available cards, (3) all cards completed, (4) manual end
 - **Token system**: Title words broken into "no-say" chips with special handling for articles (The/A/An)
 - **Scoring**: Cumulative across rounds with per-round breakdowns
 - **Player statistics**: Real-time tracking of turns, correct answers, fastest/slowest times

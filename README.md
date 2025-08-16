@@ -23,11 +23,11 @@ Skips: **Not allowed**.
 
 **Round 2 — One Word**
 You may say **one word only** per card.
-Skips: **Allowed** until you cycle back to your starting card for that turn, then **your turn ends automatically**.
+Skips: **Allowed** until you've processed all cards available at turn start, then **your turn ends automatically**.
 
 **Round 3 — Charades**
 **No words**. Non-verbal sounds and gestures are OK.
-Skips: **Allowed** until you cycle back to your starting card for that turn, then **your turn ends automatically**.
+Skips: **Allowed** until you've processed all cards available at turn start, then **your turn ends automatically**.
 
 ---
 
@@ -56,7 +56,7 @@ Skips: **Allowed** until you cycle back to your starting card for that turn, the
 ## Skips (detail)
 
 * **Round 1**: none (Skip hidden).
-* **Rounds 2–3**: Skips are unlimited **until** the deck cycles back to the **starting card of your turn**; then **your turn ends automatically** with a confirmation screen.
+* **Rounds 2–3**: Skips are unlimited **until** you've processed all cards available at turn start (via skips + correct answers); then **your turn ends automatically** with a confirmation screen.
 
 ---
 

@@ -121,7 +121,7 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
 
     * Removes current top; records `CorrectEvent` (with duration + player stats).
     * If deck empty → save remaining time as bonus, end turn immediately.
-  * **Skip** (R2/R3 only) → move top card to bottom; if next top equals `startCardID` → auto-end turn via `.turnSkipComplete`.
+  * **Skip** (R2/R3 only) → move top card to bottom; if `skipCount + correctCount ≥ initialDeckSize && skipCount > 0` → auto-end turn via `.turnSkipComplete`.
   * **Pause** → `store.pauseTurn()` → `.turnPaused` (can unpause or end turn).
   * **End Turn** → confirmation → `store.finishTurnToRecap()`.
   * **Timer end** → `store.finishTurnToRecap()`:
@@ -177,7 +177,7 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
 
 * **Single source of truth**: `GameStore` holds settings, players, deck, scores, timers.
 * **Deck** is rebuilt only between rounds, never during; order is stable within a round.
-* **Skips** follow round rules; auto-end turn after cycling back to starting card in R2/R3.
+* **Skips** follow round rules; auto-end turn after processing all initially available cards in R2/R3.
 * **Bonus time** system rewards completing all cards with saved time for next round.
 * **Player statistics** track all turns, correct answers, and timing data throughout game.
 * **Undo** reverts both deck position and score (and removes bonus if cards untoggled).
