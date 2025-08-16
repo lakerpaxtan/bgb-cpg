@@ -146,15 +146,52 @@ struct IntakeHandoffView: View {
 
 struct IntakeNameView: View {
     @EnvironmentObject var store: GameStore
+    @State private var hasStartedTyping = false
+    
+    private var nameValidationError: String? {
+        // Only show validation errors after user has started typing
+        guard hasStartedTyping else { return nil }
+        
+        let trimmed = store.pendingName.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if trimmed.isEmpty {
+            return "Name cannot be blank"
+        }
+        
+        let existingNames = Set(store.players.map { $0.name.lowercased() })
+        if existingNames.contains(trimmed.lowercased()) {
+            return "Name must be unique"
+        }
+        
+        return nil
+    }
+    
+    private var isNameValid: Bool {
+        let trimmed = store.pendingName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && !Set(store.players.map { $0.name.lowercased() }).contains(trimmed.lowercased())
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Enter Your Name")
                 .font(.title.bold())
 
-            TextField("Name", text: $store.pendingName)
-                .textFieldStyle(.roundedBorder)
-                .submitLabel(.done)
+            VStack(alignment: .leading, spacing: 8) {
+                TextField("Name", text: $store.pendingName)
+                    .textFieldStyle(.roundedBorder)
+                    .submitLabel(.done)
+                    .onChange(of: store.pendingName) { _, _ in
+                        if !hasStartedTyping {
+                            hasStartedTyping = true
+                        }
+                    }
+                
+                if let error = nameValidationError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            }
 
             let currentTeamCount = store.players.filter { $0.team == store.pendingTeam }.count
             let playersPerTeam = store.settings.players / 2
@@ -190,6 +227,7 @@ struct IntakeNameView: View {
                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     store.intakeSaveNameAndShowPicks()
                 }
+                .disabled(!isNameValid)
                 
                 RestartButton()
             }

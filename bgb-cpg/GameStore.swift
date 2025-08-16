@@ -49,7 +49,7 @@ final class GameStore: ObservableObject {
 
     // Tracking
     private var timerCancellable: AnyCancellable?
-    private var initialDeckSize: Int = 0
+    @Published private(set) var initialDeckSize: Int = 0
     private var cardShownAt: Date = Date()
     @Published var thisTurnCorrect: [CorrectEvent] = []
 
@@ -65,10 +65,18 @@ final class GameStore: ObservableObject {
     @Published var selectedPicks: Set<UUID> = []
     @Published var showingRestartConfirmation: Bool = false
     @Published var showingEndTurnConfirmation: Bool = false
+    @Published var showingEndGameConfirmation: Bool = false
+    @Published var showingPauseSettings: Bool = false
+    
+    // Mid-game settings adjustment
+    @Published var pendingTimerSeconds: Int = 60
+    
+    // Turn end tracking
+    @Published var lastTurnEndReason: TurnEndReason = .manual
     
     // Bonus time tracking for completing all cards
-    private var savedBonusTime: Int = 0
-    private var bonusTimePlayer: Player? = nil
+    @Published private(set) var savedBonusTime: Int = 0
+    @Published private(set) var bonusTimePlayer: Player? = nil
 
     // UI helpers
     var backgroundColors: [Color] {
@@ -79,7 +87,7 @@ final class GameStore: ObservableObject {
             return [Color(.systemTeal).opacity(0.12), Color(.systemBlue).opacity(0.10)]
         case .roundIntro, .turnHandoff, .turnReady:
             return [currentTeam.color.opacity(0.12), Color(.systemGray6)]
-        case .turn, .turnPaused, .turnSkipComplete:
+        case .turn, .turnPaused, .turnSkipComplete, .turnComplete:
             return [currentTeam.color.opacity(0.18), .white]
         case .recap:
             return [Color(.systemGray6), .white]
@@ -247,8 +255,9 @@ final class GameStore: ObservableObject {
     }
 
     func submitPlayerAndPicks() {
-        // Save the player
-        let p = Player(name: pendingName.isEmpty ? defaultPlayerName() : pendingName,
+        // Save the player with trimmed name
+        let trimmedName = pendingName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let p = Player(name: trimmedName.isEmpty ? defaultPlayerName() : trimmedName,
                        team: pendingTeam)
         players.append(p)
         if p.team == .A { teamAOrder.append(p) } else { teamBOrder.append(p) }
@@ -429,6 +438,33 @@ final class GameStore: ObservableObject {
         showingEndTurnConfirmation = false
     }
     
+    func showEndGameConfirmation() {
+        showingEndGameConfirmation = true
+    }
+    
+    func confirmEndGame() {
+        showingEndGameConfirmation = false
+        goHome(resetAll: true)
+    }
+    
+    func cancelEndGame() {
+        showingEndGameConfirmation = false
+    }
+    
+    func showPauseSettings() {
+        pendingTimerSeconds = settings.timerSeconds
+        showingPauseSettings = true
+    }
+    
+    func savePauseSettings() {
+        settings.timerSeconds = pendingTimerSeconds
+        showingPauseSettings = false
+    }
+    
+    func cancelPauseSettings() {
+        showingPauseSettings = false
+    }
+    
     func proceedFromSkipComplete() {
         finishTurnToRecap(reason: .skipCycleComplete)
     }
@@ -524,8 +560,18 @@ final class GameStore: ObservableObject {
         }
         roundScores[currentRound.rawValue] = r
 
-        stage = .recap
+        // Store the reason and show notification for all turn ends except skip cycle complete
+        lastTurnEndReason = reason
+        if reason == .skipCycleComplete {
+            stage = .recap
+        } else {
+            stage = .turnComplete
+        }
         Haptics.soft()
+    }
+    
+    func proceedFromTurnComplete() {
+        stage = .recap
     }
 
     func undo(event id: UUID) {

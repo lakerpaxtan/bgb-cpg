@@ -149,9 +149,29 @@ struct TurnReadyView: View {
             
             // Center start button
             VStack(spacing: 16) {
-                Text("Get ready!")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
+                VStack(spacing: 8) {
+                    Text("Get ready!")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    
+                    // Cards remaining info
+                    Text("\(store.deck.count) cards remaining")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    
+                    // Bonus time continuation info
+                    if let bonusPlayer = store.bonusTimePlayer, 
+                       bonusPlayer.id == store.clueGiver?.id,
+                       store.savedBonusTime > 0 {
+                        Text("🎉 Bonus time: \(store.savedBonusTime)s")
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(.green)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
+                            .background(Color.green.opacity(0.1))
+                            .clipShape(Capsule())
+                    }
+                }
                 
                 BigButton(title: "Start Timer", action: {
                     store.beginTurn()
@@ -190,37 +210,78 @@ struct TurnView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // Header
-            HStack {
-                Text("\(store.timeRemaining)s")
-                    .font(.system(size: 40, weight: .heavy, design: .rounded))
-                    .foregroundStyle(store.currentTeam.color)
-                    .monospacedDigit()
+            // Header with top controls row
+            VStack(spacing: 8) {
+                // Top controls row with fixed sizing
+                HStack {
+                    Text("\(store.timeRemaining)s")
+                        .font(.system(size: 40, weight: .heavy, design: .rounded))
+                        .foregroundStyle(store.currentTeam.color)
+                        .monospacedDigit()
+                        .frame(minWidth: 80, alignment: .leading)
 
-                Spacer()
-                
-                // Pause button
-                Button(action: {
-                    store.pauseTurn()
-                }) {
-                    Image(systemName: "pause.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-
-                // Skip status badge
-                Group {
-                    if store.currentRound == .one {
-                        Text("Skip: Off")
-                    } else {
-                        Text("Skip: Limited")
+                    Spacer()
+                    
+                    // Control buttons as horizontal pills
+                    HStack(spacing: 8) {
+                        // Pause button pill
+                        Button(action: {
+                            store.pauseTurn()
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "pause.fill")
+                                    .font(.caption.weight(.semibold))
+                                Text("Pause")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .foregroundStyle(.orange)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(Color.orange.opacity(0.15))
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .frame(width: 70, height: 28)
+                        
+                        // End turn button pill
+                        Button(action: {
+                            store.showEndTurnConfirmation()
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "stop.fill")
+                                    .font(.caption.weight(.semibold))
+                                Text("End")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .foregroundStyle(.red)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(Color.red.opacity(0.15))
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .frame(width: 60, height: 28)
+                        .disabled(store.deck.isEmpty)
                     }
                 }
-                .font(.footnote.weight(.semibold))
-                .padding(.horizontal, 10).padding(.vertical, 6)
-                .background(Color.black.opacity(0.06))
-                .clipShape(Capsule())
+                
+                // Primary info: Cards remaining until turn ends
+                HStack {
+                    Text("Cards Remaining")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    
+                    Spacer()
+                    
+                    let cardsRemaining = store.initialDeckSize - store.skipCount - store.thisTurnCorrect.count
+                    Text("\(max(0, cardsRemaining))")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 4)
+                        .background(Color.blue.opacity(0.1))
+                        .clipShape(Capsule())
+                }
             }
 
             Divider()
@@ -262,10 +323,42 @@ struct TurnView: View {
                     .disabled(store.deck.isEmpty)
                 }
                 
-                OutlineButton(title: "End Turn") {
-                    store.showEndTurnConfirmation()
+                // Diagnostic info
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 8) {
+                            // Skip status
+                            Group {
+                                if store.currentRound == .one {
+                                    Text("Skip: Off")
+                                        .foregroundStyle(.gray)
+                                } else {
+                                    Text("Skipped: \(store.skipCount)")
+                                        .foregroundStyle(.orange)
+                                }
+                            }
+                            .font(.caption2.weight(.medium))
+                            
+                            Text("•")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            
+                            Text("Correct: \(store.thisTurnCorrect.count)")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.green)
+                            
+                            Text("•")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            
+                            Text("Out of: \(store.initialDeckSize)")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    
+                    Spacer()
                 }
-                .disabled(store.deck.isEmpty)
             }
         }
         .padding(24)
@@ -279,6 +372,130 @@ struct TurnView: View {
             }
         } message: {
             Text("You can't undo this action. Your turn will end immediately.")
+        }
+    }
+}
+
+// MARK: - Turn Complete (all turn end reasons except skip cycle)
+
+struct TurnCompleteView: View {
+    @EnvironmentObject var store: GameStore
+    
+    private var endReasonText: String {
+        switch store.lastTurnEndReason {
+        case .timerExpired:
+            return "Time's up!"
+        case .manual:
+            return "Turn ended early"
+        case .completedAllCards:
+            return "Amazing! All cards completed!"
+        case .skipCycleComplete:
+            return "Cycled through all cards"
+        }
+    }
+    
+    private var endReasonSubtext: String {
+        switch store.lastTurnEndReason {
+        case .timerExpired:
+            return "Timer ran out - current card moved to bottom"
+        case .manual:
+            return "Turn ended manually by player"
+        case .completedAllCards:
+            return "Bonus time earned for next turn!"
+        case .skipCycleComplete:
+            return "You've seen all available cards"
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            // Blurred background showing the turn content
+            VStack(alignment: .leading, spacing: 14) {
+                // Header (blurred)
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("\(store.timeRemaining)s")
+                            .font(.system(size: 40, weight: .heavy, design: .rounded))
+                            .foregroundStyle(store.currentTeam.color.opacity(0.3))
+                            .monospacedDigit()
+                            .frame(minWidth: 80, alignment: .leading)
+
+                        Spacer()
+                        
+                        Text("Turn Complete")
+                            .font(.footnote.weight(.semibold))
+                            .padding(.horizontal, 10).padding(.vertical, 6)
+                            .background(Color.black.opacity(0.03))
+                            .clipShape(Capsule())
+                    }
+                    
+                    HStack {
+                        Text("Skip: \(store.currentRound == .one ? "Off" : "Limited")")
+                            .font(.footnote.weight(.semibold))
+                            .padding(.horizontal, 10).padding(.vertical, 6)
+                            .background(Color.black.opacity(0.03))
+                            .clipShape(Capsule())
+                        
+                        Spacer()
+                        
+                        Text("Cards: \(store.deck.count) | Correct: \(store.thisTurnCorrect.count)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Divider().opacity(0.3)
+
+                // Card area (blurred)
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("████████")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding()
+                .background(Color.white.opacity(0.5))
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .shadow(color: .black.opacity(0.03), radius: 8, y: 6)
+
+                Spacer()
+
+                // Placeholder buttons (disabled/blurred)
+                HStack(spacing: 12) {
+                    if store.currentRound != .one {
+                        OutlineButton(title: "Skip") {}
+                            .disabled(true)
+                            .opacity(0.4)
+                    }
+                    BigButton(title: "Correct", action: {}, fill: .green)
+                        .disabled(true)
+                        .opacity(0.4)
+                }
+            }
+            .padding(24)
+            .blur(radius: 3)
+            
+            // Center confirmation
+            VStack(spacing: 16) {
+                Text(endReasonText)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.primary)
+                
+                Text(endReasonSubtext)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                
+                BigButton(title: "Continue to Recap", action: {
+                    store.proceedFromTurnComplete()
+                }, fill: store.currentTeam.color)
+            }
+            .padding(32)
+            .background(Color.white.opacity(0.95))
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .shadow(color: .black.opacity(0.1), radius: 12, y: 8)
+            .padding(.horizontal, 24)
         }
     }
 }
@@ -482,20 +699,70 @@ struct TurnPausedView: View {
             .padding(24)
             .blur(radius: 3)
             
-            // Center unpause button
+            // Center pause menu
             VStack(spacing: 16) {
                 Text("Game Paused")
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.primary)
                 
-                BigButton(title: "Unpause", action: {
-                    store.unpauseTurn()
-                }, fill: store.currentTeam.color)
+                VStack(spacing: 12) {
+                    BigButton(title: "Unpause", action: {
+                        store.unpauseTurn()
+                    }, fill: store.currentTeam.color)
+                    
+                    OutlineButton(title: "Timer Settings") {
+                        store.showPauseSettings()
+                    }
+                    
+                    OutlineButton(title: "End Game & Return to Menu") {
+                        store.showEndGameConfirmation()
+                    }
+                }
             }
             .padding(32)
             .background(Color.white.opacity(0.95))
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .shadow(color: .black.opacity(0.1), radius: 12, y: 8)
+        }
+        .alert("End Game?", isPresented: $store.showingEndGameConfirmation) {
+            Button("Cancel", role: .cancel) {
+                store.cancelEndGame()
+            }
+            Button("End Game", role: .destructive) {
+                store.confirmEndGame()
+            }
+        } message: {
+            Text("This will end the current game and return to the main menu. All progress will be lost.")
+        }
+        .sheet(isPresented: $store.showingPauseSettings) {
+            NavigationView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("Timer Settings")
+                        .font(.largeTitle.bold())
+                    
+                    Text("Changes will take effect starting next round")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    
+                    Stepper("Turn timer: \(store.pendingTimerSeconds)s", 
+                           value: $store.pendingTimerSeconds, 
+                           in: 30...120, step: 5)
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 12) {
+                        OutlineButton(title: "Cancel") {
+                            store.cancelPauseSettings()
+                        }
+                        
+                        BigButton(title: "Save Changes") {
+                            store.savePauseSettings()
+                        }
+                    }
+                }
+                .padding(24)
+            }
+            .presentationDetents([.medium])
         }
     }
 }

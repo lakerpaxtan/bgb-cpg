@@ -28,24 +28,22 @@
 - Modifier order matters: `.padding(.horizontal, 24)` must come AFTER background/styling modifiers to create proper visual borders
 - Padding before background affects the background itself; padding after background creates spacing around the styled element
 
+## User Experience Design
+- Validation errors should only appear after user interaction begins (e.g., typing) to avoid appearing rude or presumptuous
+- Information hierarchy is crucial: primary actions/info should be visually prominent, diagnostic info should be clearly secondary
+- Fixed button sizing prevents layout shifts when dynamic content (like timers) changes width
+
+## Game Flow and Turn Management
+- Turn completion notifications provide clear explanations for different end scenarios (timer, manual, completed all cards)
+- Mid-game settings changes should affect future rounds, not current gameplay, to avoid disrupting active play
+- Bonus time systems need clear visual indicators when active to help players understand game state
+
 ---
 
 # Outstanding Problems
 # (do not cross off problems without checking with me first)
 
-1. Dont let players submit their names without having a unique name. Also dont let it be blank or just spaces. 
-
-2. Let's add a counter to the main gameplay screen that shows cards left in the deck and how many you've skipped and how many you've marked as correct. You can somehow combine this with the skip explanation you have --- since the number of skips is equal to the number of cards in the deck you have remaining to look through --- make it clear even in round 1 and round 2 though since one doesnt allow skips but you still want to see the counter 
-
-3. Let's move the end turn button on the main gameplay screen to the top near the pause button --- not right next to but in the same row. also make sure to make these static size and not being shifted around by the timer changing its length (since its the same row if its not static then itll be pushed around when timer changes width)
-
-4. On pause menu let me end game altogether and return to main menu 
-
-5. On pause menu create a little settings menu where you can adjust timer in the middle of the game --- mention that all settings changed in that menu will take effect on the round after the current one --- and also implement the part where it takes effect 
-
-6. On the skip to starting word description in the top right of the main turn view with the timer --- please put different text --- the starting word text is hard to interpret as a player --- find a better wya to indicate to the player the underlying logic
-
-7. Lets use the turn complete notifications for all turn end transitions and have explanations for all options --- timer ran out | cycled through all the cards once | completed full deck
+No outstanding problems at this time! 🎉
 ---
 
 # Completed Problems
@@ -117,3 +115,25 @@
 33. ~~On turn handoff page shortern the Skips explanation. Same message just shorter.~~ ✅
 
 34. ~~On the get ready and turn complete notifications --- add left/right borders so it doesn't stretch edge to edge horizontally~~ ✅
+
+35. ~~Dont let players submit their names without having a unique name. Also dont let it be blank or just spaces.~~ ✅
+
+36. ~~Let's add a counter to the main gameplay screen that shows cards left in the deck and how many you've skipped and how many you've marked as correct.~~ ✅
+
+37. ~~Let's move the end turn button on the main gameplay screen to the top near the pause button with static sizing.~~ ✅
+
+38. ~~On pause menu let me end game altogether and return to main menu~~ ✅
+
+39. ~~On pause menu create a little settings menu where you can adjust timer in the middle of the game.~~ ✅
+
+40. ~~On the skip description in the turn view - put better text that's easier to interpret.~~ ✅
+
+41. ~~Use turn complete notifications for all turn end transitions with explanations for all options.~~ ✅
+
+42. ~~Redesign top buttons (pause/end) as horizontal pills with text+icon and static sizing.~~ ✅
+
+43. ~~Enhance Get Ready screen with cards remaining and bonus time continuation info.~~ ✅
+
+44. ~~Redesign deck counter with proper information hierarchy and move diagnostics below buttons.~~ ✅
+
+45. ~~Fix name validation to only show errors after user starts typing to avoid appearing rude.~~ ✅

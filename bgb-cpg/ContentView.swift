@@ -38,6 +38,8 @@ struct ContentView: View {
                 TurnPausedView()
             case .turnSkipComplete:
                 TurnSkipCompleteView()
+            case .turnComplete:
+                TurnCompleteView()
             case .recap:
                 RecapView()
             case .roundEnd:

@@ -33,11 +33,14 @@ Skips: **Allowed** until you've processed all cards available at turn start, the
 
 ## Turns
 
-* The app tells you who holds the phone each turn.
+* The app tells you who holds the phone each turn and shows **cards remaining** for that turn.
 * Hit **Correct** when the guessers get it.
 * **Complete all cards** in your turn → save your remaining time as **bonus time** for your next turn!
-* **Pause button** lets you pause mid-turn; **End Turn** button lets you end early with confirmation.
-* **Timer end**: the current card is pushed to the bottom automatically and a recap opens.
+* **Get Ready screen** shows bonus time when available and lets you start when ready.
+* **Top controls**: **Pause** and **End** buttons with icons stay fixed as timer changes.
+* **Turn notifications**: Clear explanations for timer end, manual end, or completing all cards.
+* **Pause menu**: Unpause, adjust timer settings (affects next round), or end game entirely.
+* **Cards counter**: Shows cards remaining this turn, plus diagnostics (skipped/correct/total).
 * **Turn Recap**: only **read out loud** the highlighted correct answers; you can toggle highlight.
 * **Undo** on a recap removes that correct, **reinserts the card** at its prior position for this round, and reduces the score.
 
@@ -72,7 +75,9 @@ Skips: **Allowed** until you've processed all cards available at turn start, the
 ## Player Intake
 
 * Collect Team A first, then Team B.
+* **Name validation**: Must be unique and non-blank; errors appear only after typing begins.
 * Each player sees **N candidates** and must pick **M**.
+* **Full card selection**: Tap anywhere on a card to select it, not just the circle.
 * Bad or duplicate titles are auto-replaced so the deck ends up with **one card per submitted pick**.
 
 ---

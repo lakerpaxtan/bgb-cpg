@@ -29,9 +29,11 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
     * `.intakePicks` → `IntakePicksView`
     * `.roundIntro` → `RoundIntroView`
     * `.turnHandoff` → `TurnHandoffView`
+    * `.turnReady` → `TurnReadyView`
+    * `.turn` → `TurnView`
     * `.turnPaused` → `TurnPausedView`
     * `.turnSkipComplete` → `TurnSkipCompleteView`
-    * `.turn` → `TurnView`
+    * `.turnComplete` → `TurnCompleteView`
     * `.recap` → `RecapView`
     * `.roundEnd` → `RoundEndView`
     * `.gameEnd` → `GameEndView`
@@ -109,7 +111,8 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
   * Sets next `clueGiver` based on team rotation.
   * Stage → `.turnHandoff`.
 
-* `TurnHandoffView` → **I'm {ClueGiver} — Start Turn** → `store.beginTurn()` → `.turn`.
+* `TurnHandoffView` → **I'm {ClueGiver} — Get Ready** → `.turnReady`
+* `TurnReadyView` → **Start Timer** → `store.beginTurn()` → `.turn`
 
 ### 4) Turn
 
@@ -122,13 +125,13 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
     * Removes current top; records `CorrectEvent` (with duration + player stats).
     * If deck empty → save remaining time as bonus, end turn immediately.
   * **Skip** (R2/R3 only) → move top card to bottom; if `skipCount + correctCount ≥ initialDeckSize && skipCount > 0` → auto-end turn via `.turnSkipComplete`.
-  * **Pause** → `store.pauseTurn()` → `.turnPaused` (can unpause or end turn).
-  * **End Turn** → confirmation → `store.finishTurnToRecap()`.
-  * **Timer end** → `store.finishTurnToRecap()`:
+  * **Pause** → `store.pauseTurn()` → `.turnPaused` (can unpause, end turn, or adjust settings).
+  * **End Turn** → confirmation → `store.finishTurnToRecap()` → `.turnComplete` (except skip cycle).
+  * **Timer end** → `store.finishTurnToRecap()` → `.turnComplete`:
 
     * Push current top to bottom.
     * Apply turn score to `RoundScore` + cumulative.
-    * Stage → `.recap`.
+    * Show turn end explanation, then → `.recap`.
 
 ### 5) Recap
 
@@ -162,9 +165,10 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
 .settings
   → .intakeHandoff
 .intakeHandoff → .intakeName → .intakePicks → (repeat) … → .roundIntro
-.roundIntro → .turnHandoff → .turn → (.turnPaused | .turnSkipComplete | .recap)
-.turnPaused → (.turn | .recap)
+.roundIntro → .turnHandoff → .turnReady → .turn → (.turnPaused | .turnSkipComplete | .turnComplete)
+.turnPaused → (.turn | .recap | .home via End Game)
 .turnSkipComplete → .recap
+.turnComplete → .recap
 .recap → (.turnHandoff | .roundEnd)
 .roundEnd → (.roundIntro | .gameEnd)
 .gameEnd → (.gameStats | .roundIntro via Rematch | .home via New Game)
@@ -180,6 +184,9 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
 * **Skips** follow round rules; auto-end turn after processing all initially available cards in R2/R3.
 * **Bonus time** system rewards completing all cards with saved time for next round.
 * **Player statistics** track all turns, correct answers, and timing data throughout game.
+* **Name validation** prevents blank/duplicate names with polite UX (errors only after typing begins).
+* **Turn notifications** provide contextual explanations for different turn end scenarios.
+* **Pause menu** includes mid-game timer adjustment and emergency exit options.
 * **Undo** reverts both deck position and score (and removes bonus if cards untoggled).
 * **Token chips** come from `GameStore.tokens(for:)` (split on non-alphanumerics; leading article optional per `settings.acceptance`).
 
