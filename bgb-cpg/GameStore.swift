@@ -376,7 +376,7 @@ final class GameStore: ObservableObject {
         
         // Use bonus time if this player completed the previous round
         if let bonusPlayer = bonusTimePlayer, bonusPlayer.id == clueGiver?.id, savedBonusTime > 0 {
-            timeRemaining = savedBonusTime
+            timeRemaining = min(savedBonusTime, settings.timerSeconds)
             // Clear the bonus after using it
             savedBonusTime = 0
             bonusTimePlayer = nil
