@@ -97,20 +97,64 @@ struct TurnReadyView: View {
         ZStack {
             // Blurred background showing the upcoming turn content
             VStack(alignment: .leading, spacing: 14) {
-                // Header (blurred)
-                HStack {
-                    Text("\(store.settings.timerSeconds)s")
-                        .font(.system(size: 40, weight: .heavy, design: .rounded))
-                        .foregroundStyle(store.currentTeam.color.opacity(0.3))
-                        .monospacedDigit()
+                // Header (blurred) - matches current TurnView layout
+                VStack(spacing: 8) {
+                    // Top controls row with fixed sizing (blurred)
+                    HStack {
+                        Text("\(store.settings.timerSeconds)s")
+                            .font(.system(size: 40, weight: .heavy, design: .rounded))
+                            .foregroundStyle(store.currentTeam.color.opacity(0.3))
+                            .monospacedDigit()
+                            .frame(minWidth: 80, alignment: .leading)
 
-                    Spacer()
-
-                    Text("Ready to start")
-                        .font(.footnote.weight(.semibold))
-                        .padding(.horizontal, 10).padding(.vertical, 6)
-                        .background(Color.black.opacity(0.03))
-                        .clipShape(Capsule())
+                        Spacer()
+                        
+                        // Control buttons (disabled/blurred)
+                        HStack(spacing: 8) {
+                            // Pause button pill
+                            HStack(spacing: 4) {
+                                Image(systemName: "pause.fill")
+                                    .font(.caption.weight(.semibold))
+                                Text("Pause")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .foregroundStyle(.orange.opacity(0.4))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(Color.orange.opacity(0.06))
+                            .clipShape(Capsule())
+                            .frame(width: 70, height: 28)
+                            
+                            // End turn button pill
+                            HStack(spacing: 4) {
+                                Image(systemName: "stop.fill")
+                                    .font(.caption.weight(.semibold))
+                                Text("End")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .foregroundStyle(.red.opacity(0.4))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(Color.red.opacity(0.06))
+                            .clipShape(Capsule())
+                            .frame(width: 60, height: 28)
+                        }
+                    }
+                    
+                    // Game status info row (blurred)
+                    HStack {
+                        Text("Ready to start")
+                            .font(.footnote.weight(.semibold))
+                            .padding(.horizontal, 10).padding(.vertical, 6)
+                            .background(Color.black.opacity(0.03))
+                            .clipShape(Capsule())
+                        
+                        Spacer()
+                        
+                        Text("Cards: \(store.deck.count) | Ready to play")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary.opacity(0.6))
+                    }
                 }
 
                 Divider().opacity(0.3)
@@ -132,16 +176,47 @@ struct TurnReadyView: View {
 
                 Spacer()
 
-                // Placeholder buttons (disabled/blurred)
-                HStack(spacing: 12) {
-                    if store.currentRound != .one {
-                        OutlineButton(title: "Skip") {}
+                // Placeholder buttons (disabled/blurred) - matches new layout
+                VStack(spacing: 12) {
+                    HStack(spacing: 12) {
+                        if store.currentRound != .one {
+                            OutlineButton(title: "Skip") {}
+                                .disabled(true)
+                                .opacity(0.4)
+                        }
+                        BigButton(title: "Correct", action: {}, fill: .green)
                             .disabled(true)
                             .opacity(0.4)
                     }
-                    BigButton(title: "Correct", action: {}, fill: .green)
-                        .disabled(true)
-                        .opacity(0.4)
+                    
+                    // Placeholder diagnostic info
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 8) {
+                                Text("Skipped: 0")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(.secondary.opacity(0.4))
+                                
+                                Text("•")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary.opacity(0.4))
+                                
+                                Text("Correct: 0")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(.secondary.opacity(0.4))
+                                
+                                Text("•")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary.opacity(0.4))
+                                
+                                Text("Out of: \(store.deck.count)")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(.secondary.opacity(0.4))
+                            }
+                        }
+                        
+                        Spacer()
+                    }
                 }
             }
             .padding(24)
@@ -710,6 +785,10 @@ struct TurnPausedView: View {
                         store.unpauseTurn()
                     }, fill: store.currentTeam.color)
                     
+                    OutlineButton(title: "View Rules") {
+                        store.showRulesFromPause()
+                    }
+                    
                     OutlineButton(title: "Timer Settings") {
                         store.showPauseSettings()
                     }
@@ -763,6 +842,20 @@ struct TurnPausedView: View {
                 .padding(24)
             }
             .presentationDetents([.medium])
+        }
+        .sheet(isPresented: $store.showingRulesFromPause) {
+            NavigationView {
+                HowToView()
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") {
+                                store.hideRulesFromPause()
+                            }
+                        }
+                    }
+            }
+            .presentationDetents([.large])
         }
     }
 }

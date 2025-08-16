@@ -67,6 +67,7 @@ final class GameStore: ObservableObject {
     @Published var showingEndTurnConfirmation: Bool = false
     @Published var showingEndGameConfirmation: Bool = false
     @Published var showingPauseSettings: Bool = false
+    @Published var showingRulesFromPause: Bool = false
     
     // Mid-game settings adjustment
     @Published var pendingTimerSeconds: Int = 60
@@ -463,6 +464,14 @@ final class GameStore: ObservableObject {
     
     func cancelPauseSettings() {
         showingPauseSettings = false
+    }
+    
+    func showRulesFromPause() {
+        showingRulesFromPause = true
+    }
+    
+    func hideRulesFromPause() {
+        showingRulesFromPause = false
     }
     
     func proceedFromSkipComplete() {

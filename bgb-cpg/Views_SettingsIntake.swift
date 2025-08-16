@@ -36,7 +36,7 @@ struct SettingsView: View {
 
                 // Players
                 Group {
-                    Stepper("Players: \(s.players)", value: $s.players, in: 4...12)
+                    Stepper("Players: \(s.players)", value: $s.players, in: 4...20)
                 }
 
                 Divider().padding(.vertical, 8)
@@ -147,6 +147,7 @@ struct IntakeHandoffView: View {
 struct IntakeNameView: View {
     @EnvironmentObject var store: GameStore
     @State private var hasStartedTyping = false
+    @FocusState private var isTextFieldFocused: Bool
     
     private var nameValidationError: String? {
         // Only show validation errors after user has started typing
@@ -177,19 +178,38 @@ struct IntakeNameView: View {
                 .font(.title.bold())
 
             VStack(alignment: .leading, spacing: 8) {
-                TextField("Name", text: $store.pendingName)
-                    .textFieldStyle(.roundedBorder)
-                    .submitLabel(.done)
-                    .onChange(of: store.pendingName) { _, _ in
-                        if !hasStartedTyping {
-                            hasStartedTyping = true
+                // Larger, more prominent text field with invisible tap area
+                ZStack {
+                    // Invisible tap area around the text field
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(height: 80)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            isTextFieldFocused = true
                         }
-                    }
+                    
+                    TextField("Enter your name", text: $store.pendingName)
+                        .font(.title3)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 16)
+                        .background(Color.white.opacity(0.9))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .shadow(color: .black.opacity(0.08), radius: 8, y: 4)
+                        .submitLabel(.done)
+                        .focused($isTextFieldFocused)
+                        .onChange(of: store.pendingName) { _, _ in
+                            if !hasStartedTyping {
+                                hasStartedTyping = true
+                            }
+                        }
+                }
                 
                 if let error = nameValidationError {
                     Text(error)
                         .font(.caption)
                         .foregroundStyle(.red)
+                        .padding(.horizontal, 4)
                 }
             }
 
