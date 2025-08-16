@@ -24,6 +24,10 @@
 - setNextClueGiverIfNeeded() should check for bonus player first before normal team rotation
 - beginTurn() should apply bonus time and clear it immediately after use
 
+## SwiftUI Layout and Padding
+- Modifier order matters: `.padding(.horizontal, 24)` must come AFTER background/styling modifiers to create proper visual borders
+- Padding before background affects the background itself; padding after background creates spacing around the styled element
+
 ---
 
 # Outstanding Problems
@@ -31,21 +35,17 @@
 
 1. Dont let players submit their names without having a unique name. Also dont let it be blank or just spaces. 
 
-2. Change cumulative to total on the round complete screen so both team names fit lol
+2. Let's add a counter to the main gameplay screen that shows cards left in the deck and how many you've skipped and how many you've marked as correct. You can somehow combine this with the skip explanation you have --- since the number of skips is equal to the number of cards in the deck you have remaining to look through --- make it clear even in round 1 and round 2 though since one doesnt allow skips but you still want to see the counter 
 
-3. Let's add a counter to the main gameplay screen that shows cards left in the deck and how many you've skipped and how many you've marked as correct. You can somehow combine this with the skip explanation you have --- since the number of skips is equal to the number of cards in the deck you have remaining to look through --- make it clear even in round 1 and round 2 though since one doesnt allow skips but you still want to see the counter 
+3. Let's move the end turn button on the main gameplay screen to the top near the pause button --- not right next to but in the same row. also make sure to make these static size and not being shifted around by the timer changing its length (since its the same row if its not static then itll be pushed around when timer changes width)
 
-4. Let's move the end turn button on the main gameplay screen to the top near the pause button --- not right next to but in the same row. also make sure to make these static size and not being shifted around by the timer changing its length (since its the same row if its not static then itll be pushed around when timer changes width)
+4. On pause menu let me end game altogether and return to main menu 
 
-5. The view player stats screen at the end is weirdly offset --- the Player Stats should be a title at the top and so should the back button --- right now the whole thing starts like 1/3 of the way to the bottom of the screen and there is a weirdly large gap between player stats and the scrolling stats view 
+5. On pause menu create a little settings menu where you can adjust timer in the middle of the game --- mention that all settings changed in that menu will take effect on the round after the current one --- and also implement the part where it takes effect 
 
-6. On pause menu let me end game altogether and return to main menu 
+6. On the skip to starting word description in the top right of the main turn view with the timer --- please put different text --- the starting word text is hard to interpret as a player --- find a better wya to indicate to the player the underlying logic
 
-7. On pause menu create a little settings menu where you can adjust timer in the middle of the game --- mention that all settings changed in that menu will take effect on the round after the current one --- and also implement the part where it takes effect 
-
-8. On the word selection screen --- make it so you can hit the whole card to trigger selection --- no need to make people aim and target the little circle 
-
-9. On turn handoff page shortern the Skips explanation. Same message just shorter. 
+7. Lets use the turn complete notifications for all turn end transitions and have explanations for all options --- timer ran out | cycled through all the cards once | completed full deck
 ---
 
 # Completed Problems
@@ -107,3 +107,13 @@
 28. ~~Fix skip logic bug and remove obsolete skip locking~~ ✅
 
 29. ~~Fix critical skip logic bug where completing start card allowed infinite skipping. Implemented count-based detection (skipCount + correctCount ≥ initialDeckSize && skipCount > 0) to properly distinguish between completing all cards vs cycling through via skips. Updated all documentation.~~ ✅
+
+30. ~~Change cumulative to total on the round complete screen so both team names fit lol~~ ✅
+
+31. ~~The view player stats screen at the end is weirdly offset --- the Player Stats should be a title at the top and so should the back button --- right now the whole thing starts like 1/3 of the way to the bottom of the screen and there is a weirdly large gap between player stats and the scrolling stats view~~ ✅
+
+32. ~~On the word selection screen --- make it so you can hit the whole card to trigger selection --- no need to make people aim and target the little circle~~ ✅
+
+33. ~~On turn handoff page shortern the Skips explanation. Same message just shorter.~~ ✅
+
+34. ~~On the get ready and turn complete notifications --- add left/right borders so it doesn't stretch edge to edge horizontally~~ ✅

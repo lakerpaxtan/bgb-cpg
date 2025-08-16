@@ -46,7 +46,7 @@ enum RoundPhase: Int, Codable {
     var skipPolicy: String {
         switch self {
         case .one: return "Skips: Not allowed."
-        case .two, .three: return "Skips: Allowed until you return to your starting card, then off."
+        case .two, .three: return "Skips: Allowed until you cycle through all cards."
         }
     }
 }

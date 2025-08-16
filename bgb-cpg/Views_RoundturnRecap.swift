@@ -178,6 +178,7 @@ struct TurnReadyView: View {
             .background(Color.white.opacity(0.95))
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .shadow(color: .black.opacity(0.1), radius: 12, y: 8)
+            .padding(.horizontal, 24)
         }
     }
 }
@@ -213,7 +214,7 @@ struct TurnView: View {
                     if store.currentRound == .one {
                         Text("Skip: Off")
                     } else {
-                        Text("Skip until start card")
+                        Text("Skip: Limited")
                     }
                 }
                 .font(.footnote.weight(.semibold))
@@ -364,6 +365,7 @@ struct TurnSkipCompleteView: View {
             .background(Color.white.opacity(0.95))
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .shadow(color: .black.opacity(0.1), radius: 12, y: 8)
+            .padding(.horizontal, 24)
         }
     }
 }

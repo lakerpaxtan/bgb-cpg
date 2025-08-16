@@ -600,7 +600,12 @@ final class GameStore: ObservableObject {
     private func endRoundIfNeeded() {
         // If deck empty, round complete
         if deck.isEmpty {
-            stage = .roundEnd
+            // Skip round complete screen for Round 3, go directly to game end
+            if currentRound == .three {
+                stage = .gameEnd
+            } else {
+                stage = .roundEnd
+            }
         } else {
             // Defensive; usually not hit
             stage = .turnHandoff

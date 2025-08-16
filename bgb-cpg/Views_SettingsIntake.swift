@@ -266,36 +266,37 @@ private struct CandidateRow: View {
     var onReroll: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Button(action: onToggle) {
+        Button(action: onToggle) {
+            HStack(alignment: .top, spacing: 12) {
                 Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
                     .foregroundStyle(selected ? Color.green : Color.secondary)
-            }
-            .buttonStyle(.plain)
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(card.title)
-                    .font(.headline)
-                Text(card.subject.rawValue)
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer()
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(card.title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Text(card.subject.rawValue)
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
 
-            Button(action: onReroll) {
-                Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.title3.bold())
-                    .foregroundStyle(.blue)
-                    .padding(10)
-                    .background(Color.blue.opacity(0.12))
-                    .clipShape(Circle())
+                Button(action: onReroll) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.title3.bold())
+                        .foregroundStyle(.blue)
+                        .padding(10)
+                        .background(Color.blue.opacity(0.12))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Reroll")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Reroll")
+            .padding(12)
+            .background(Color.white.opacity(0.9))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
         }
-        .padding(12)
-        .background(Color.white.opacity(0.9))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .buttonStyle(.plain)
         .shadow(color: .black.opacity(0.04), radius: 6, y: 3)
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: selected)
     }

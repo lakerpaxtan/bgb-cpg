@@ -4,13 +4,18 @@ struct RoundEndView: View {
     @EnvironmentObject var store: GameStore
 
     var body: some View {
-        let r = store.roundScores[store.currentRound.rawValue] ?? RoundScore()
-
         VStack(alignment: .leading, spacing: 16) {
             Text("Round Complete!")
                 .font(.largeTitle.bold())
 
-            Scoreboard(round: store.currentRound.rawValue, r: r, cumA: store.cumulativeA, cumB: store.cumulativeB)
+            // Use the shared score display component
+            ScoreDisplayView(
+                title: "Running Total",
+                cumulativeA: store.cumulativeA,
+                cumulativeB: store.cumulativeB,
+                roundScores: store.roundScores,
+                currentRound: store.currentRound.rawValue
+            )
 
             if store.settings.stats.showBetweenRounds {
                 Text("Highlights")
@@ -58,7 +63,7 @@ struct Scoreboard: View {
             }
             Divider()
             HStack {
-                Text("Cumulative")
+                Text("Total")
                     .font(.title3.bold())
                 Spacer()
                 HStack(spacing: 12) {
@@ -113,10 +118,14 @@ struct GameEndView: View {
                         .foregroundStyle(Team.B.color)
                 }
 
-                Scoreboard(round: 3,
-                           r: store.roundScores[3] ?? RoundScore(),
-                           cumA: store.cumulativeA,
-                           cumB: store.cumulativeB)
+                // Use the shared score display component
+                ScoreDisplayView(
+                    title: "Final Score",
+                    cumulativeA: store.cumulativeA,
+                    cumulativeB: store.cumulativeB,
+                    roundScores: store.roundScores,
+                    currentRound: 3
+                )
 
                 Spacer()
 
@@ -151,7 +160,8 @@ struct GameStatsView: View {
     @EnvironmentObject var store: GameStore
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header with back button and title
             HStack {
                 Button(action: {
                     store.hideGameStats()
@@ -167,16 +177,12 @@ struct GameStatsView: View {
                 .buttonStyle(.plain)
                 
                 Spacer()
-                
-                Text("Player Stats")
-                    .font(.largeTitle.bold())
-                
-                Spacer()
-                
-                // Invisible spacer to center the title
-                Color.clear
-                    .frame(width: 60)
             }
+            .padding(.bottom, 8)
+            
+            Text("Player Stats")
+                .font(.largeTitle.bold())
+                .padding(.bottom, 16)
             
             ScrollView {
                 LazyVStack(spacing: 12) {
@@ -184,12 +190,12 @@ struct GameStatsView: View {
                         PlayerStatsCard(player: player, stats: store.playerStats[player.id])
                     }
                 }
+                .padding(.bottom, 16)
             }
             
             BigButton(title: "Done") {
                 store.hideGameStats()
             }
-            .padding(.top, 8)
         }
         .padding(24)
     }
@@ -262,6 +268,68 @@ struct StatRow: View {
             Spacer()
             Text(value)
                 .font(.caption.bold())
+        }
+    }
+}
+
+// MARK: - Shared Score Display Component
+
+struct ScoreDisplayView: View {
+    let title: String
+    let cumulativeA: Int
+    let cumulativeB: Int
+    let roundScores: [Int: RoundScore]
+    let currentRound: Int
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // Prominent Total Score
+            VStack(spacing: 12) {
+                Text(title)
+                    .font(.title2.bold())
+                    .foregroundStyle(.secondary)
+                
+                HStack(spacing: 16) {
+                    ScoreBadge(team: .A, score: cumulativeA)
+                    ScoreBadge(team: .B, score: cumulativeB)
+                }
+            }
+            .padding()
+            .background(Color.white.opacity(0.98))
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .shadow(color: .black.opacity(0.08), radius: 10, y: 6)
+            
+            // Divider
+            Divider()
+                .padding(.vertical, 8)
+            
+            // Round Breakdown
+            VStack(spacing: 8) {
+                Text("Round Breakdown")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+                
+                ForEach(1...currentRound, id: \.self) { roundNum in
+                    let roundScore = roundScores[roundNum] ?? RoundScore()
+                    HStack {
+                        Text("Round \(roundNum)")
+                            .font(.subheadline.weight(.medium))
+                        Spacer()
+                        HStack(spacing: 8) {
+                            Text("A: \(roundScore.teamA)")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Team.A.color)
+                            Text("B: \(roundScore.teamB)")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Team.B.color)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.black.opacity(0.03))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+            }
         }
     }
 }
