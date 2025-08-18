@@ -466,7 +466,7 @@ struct WikipediaFiltersView: View {
                 
                 // Popularity
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Popularity: \(filters.popularityPercentile.lowerBound)%-\(filters.popularityPercentile.upperBound)%")
+                    Text("Popularity (not in use): \(filters.popularityPercentile.lowerBound)%-\(filters.popularityPercentile.upperBound)%")
                         .font(.headline)
                     Text("Filters articles by how well-known they are. 0%=obscure, 100%=widely known")
                         .font(.caption)
@@ -475,12 +475,12 @@ struct WikipediaFiltersView: View {
                 RangeSlider(range: $filters.popularityPercentile, bounds: 0...100, step: 5)
                 
                 // Creation Years
-                Text("Created: \(filters.createdYears.lowerBound)-\(filters.createdYears.upperBound)")
+                Text("Created (not in use): \(filters.createdYears.lowerBound)-\(filters.createdYears.upperBound)")
                     .font(.headline)
                 RangeSlider(range: $filters.createdYears, bounds: 2001...2025, step: 1)
                 
                 // Update Years
-                Text("Updated: \(filters.updatedYears.lowerBound)-\(filters.updatedYears.upperBound)")
+                Text("Updated (not in use): \(filters.updatedYears.lowerBound)-\(filters.updatedYears.upperBound)")
                     .font(.headline)
                 RangeSlider(range: $filters.updatedYears, bounds: 2020...2025, step: 1)
             } else {
