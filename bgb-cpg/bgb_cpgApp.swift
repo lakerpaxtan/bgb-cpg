@@ -8,6 +8,10 @@ struct bgb_cpgApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(store)
+                .onAppear {
+                    print("🚀 bgb-cpg App launched successfully")
+                    print("🎮 GameStore initialized and ready")
+                }
         }
     }
 }

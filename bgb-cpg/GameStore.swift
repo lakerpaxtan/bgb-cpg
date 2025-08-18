@@ -12,6 +12,10 @@ enum TurnEndReason {
 @MainActor
 final class GameStore: ObservableObject {
 
+    // MARK: - Services
+    
+    @Published var wikipediaService = WikipediaService()
+    
     // MARK: - Published state
 
     @Published var stage: Stage = .home
@@ -63,6 +67,9 @@ final class GameStore: ObservableObject {
     @Published var pendingTeam: Team = .A
     @Published var candidateTitles: [Card] = []
     @Published var selectedPicks: Set<UUID> = []
+    @Published var loadingCandidates: Bool = false
+    @Published var candidateLoadingError: String? = nil
+    @Published var sharedWikipediaTitles: [Card] = [] // Pre-loaded titles for all players
     @Published var showingRestartConfirmation: Bool = false
     @Published var showingEndTurnConfirmation: Bool = false
     @Published var showingEndGameConfirmation: Bool = false
@@ -86,7 +93,7 @@ final class GameStore: ObservableObject {
             return [Color.white, Color(white: 0.95)]
         case .settings, .intakeHandoff, .intakeName, .intakePicks:
             return [Color(.systemTeal).opacity(0.12), Color(.systemBlue).opacity(0.10)]
-        case .roundIntro, .turnHandoff, .turnReady:
+        case .roundIntro, .turnHandoff:
             return [currentTeam.color.opacity(0.12), Color(.systemGray6)]
         case .turn, .turnPaused, .turnSkipComplete, .turnComplete:
             return [currentTeam.color.opacity(0.18), .white]
@@ -102,7 +109,9 @@ final class GameStore: ObservableObject {
     // MARK: - Home / How To
 
     func goHome(resetAll: Bool = true) {
+        print("🏠 GameStore.goHome() called with resetAll: \(resetAll)")
         if resetAll {
+            print("🔄 Resetting all game state to defaults")
             settings = .default
             players = []
             teamAOrder = []
@@ -119,9 +128,14 @@ final class GameStore: ObservableObject {
             currentTeam = settings.startingTeam
         }
         stage = .home
+        print("✅ Stage changed to: .home")
     }
 
-    func showHowTo() { stage = .howTo }
+    func showHowTo() { 
+        print("📖 GameStore.showHowTo() - transitioning to how-to screen")
+        stage = .howTo 
+        print("✅ Stage changed to: .howTo")
+    }
     
     func showRestartConfirmation() { showingRestartConfirmation = true }
     
@@ -134,13 +148,23 @@ final class GameStore: ObservableObject {
     func cancelRestart() { showingRestartConfirmation = false }
 
     func startSettings() {
+        print("⚙️ GameStore.startSettings() - entering settings configuration")
         currentTeam = settings.startingTeam
         stage = .settings
+        print("✅ Stage changed to: .settings")
+        
+        // Check Wikipedia availability when entering settings
+        Task {
+            print("🌐 Checking Wikipedia availability in background...")
+            await wikipediaService.checkAvailability()
+        }
     }
 
     // MARK: - Settings → Intake
 
     func startIntake() {
+        print("👥 GameStore.startIntake() - beginning player intake process")
+        print("📋 Settings: \(settings.players) players, \(settings.titlesPerPlayer) titles/player, source: \(settings.contentSource)")
         players = []
         teamAOrder = []
         teamBOrder = []
@@ -155,35 +179,91 @@ final class GameStore: ObservableObject {
         intakeExpectedCount = settings.players
         intakeTeamCollecting = .A
         intakeIndexInTeam = 0
-
-        stage = .intakeHandoff
+        
+        // Set loading state but stay on settings screen
+        loadingCandidates = true
+        candidateLoadingError = nil
+        print("🔄 Starting title preloading without changing stage")
+        preloadTitles()
+    }
+    
+    // Unified function to preload titles from any source
+    private func preloadTitles() {
+        print("📦 GameStore.preloadTitles() - starting title preloading")
+        Task {
+            await preloadTitlesAsync()
+        }
+    }
+    
+    @MainActor
+    private func preloadTitlesAsync() async {
+        loadingCandidates = true
+        candidateLoadingError = nil
+        sharedWikipediaTitles = []
+        
+        let totalNeeded = settings.players * settings.titlesPerPlayer
+        print("📊 GameStore.preloadTitlesAsync() - need \(totalNeeded) total titles")
+        
+        switch settings.contentSource {
+        case .wikipedia:
+            print("🌐 Using Wikipedia content source")
+            await preloadWikipediaTitlesAsync(totalNeeded: totalNeeded)
+        case .offline:
+            print("💾 Using offline content source")
+            preloadOfflineTitles(totalNeeded: totalNeeded)
+        }
+        
+        loadingCandidates = false
+        print("✅ Title preloading complete")
+        
+        // Move to intake handoff when loading is complete and no errors
+        if candidateLoadingError == nil {
+            stage = .intakeHandoff
+            print("✅ Stage changed to: .intakeHandoff")
+        } else {
+            print("❌ Staying on settings due to loading error")
+        }
     }
 
     // Next handoff prompt during intake
     func intakeProceed() {
+        print("➡️ GameStore.intakeProceed() - moving to name entry for \(intakeTeamCollecting)")
         pendingName = ""
         pendingTeam = intakeTeamCollecting
         stage = .intakeName
+        print("✅ Stage changed to: .intakeName")
     }
 
     func intakeSaveNameAndShowPicks() {
-        // create per-player candidate list now
-        generateCandidates()
+        print("📝 GameStore.intakeSaveNameAndShowPicks() - name: '\(pendingName)', team: \(pendingTeam)")
         selectedPicks = []
-        stage = .intakePicks
+        
+        // Always use pre-loaded shared pool (regardless of source)
+        generateCandidatesFromSharedPool()
     }
 
     // MARK: - Candidate generation and selection
 
-    private func subjectUniverse() -> [Subject] {
+    private func subjectUniverse() -> [String] {
         let subs = settings.filters.subjects
         if subs.contains(.everything) || subs.isEmpty {
-            return Subject.allCases.filter { $0 != .everything }
+            return Subject.allCases.filter { $0 != .everything }.map { $0.rawValue }
         }
-        return Array(subs)
+        return Array(subs.map { $0.rawValue })
     }
 
     private func drawOneCard(avoid existing: Set<String>) -> Card? {
+        switch settings.contentSource {
+        case .offline:
+            return drawOfflineCard(avoid: existing)
+        case .wikipedia:
+            // For individual card draws, fall back to offline
+            // Wikipedia fetching will be done in bulk during generateCandidates
+            return drawOfflineCard(avoid: existing)
+        }
+    }
+    
+    private func drawOfflineCard(avoid existing: Set<String>) -> Card? {
         // try up to some attempts to avoid duplicates and honor filters
         let subjects = subjectUniverse()
         guard let randomSubject = subjects.randomElement() else { return nil }
@@ -192,33 +272,146 @@ final class GameStore: ObservableObject {
         for title in pool {
             let norm = title.lowercased()
             if existing.contains(norm) { continue }
-            if TitleFilter.isValid(title, filters: settings.filters) {
-                return Card(title: title, subject: randomSubject)
-            }
+            // TitleBank is pre-curated, no filtering needed
+            return Card(title: title, subject: randomSubject)
         }
         return nil
     }
 
-    private func generateCandidates() {
-        var set = Set<String>()
-        
-        // Start with cards already picked by other players to avoid duplicates
-        let globalExisting = Set(allCards.map { $0.title.lowercased() })
-        set.formUnion(globalExisting)
-        
-        candidateTitles = []
-        let need = settings.titlesPerPlayer
-        var tries = 0
-        while candidateTitles.count < need && tries < need * 50 {
-            if let card = drawOneCard(avoid: set) {
-                candidateTitles.append(card)
-                set.insert(card.title.lowercased())
+    
+    
+    
+    @MainActor
+    private func preloadWikipediaTitlesAsync(totalNeeded: Int) async {
+        print("🌐 Fetching Wikipedia titles")
+        do {
+            let wikipediaCards = try await wikipediaService.fetchTitles(
+                filters: settings.wikipediaFilters,
+                count: totalNeeded
+            )
+            
+            // Check if we got enough Wikipedia titles
+            if wikipediaCards.count < totalNeeded {
+                print("❌ Not enough Wikipedia titles: got \(wikipediaCards.count), need \(totalNeeded)")
+                candidateLoadingError = "Only found \(wikipediaCards.count) Wikipedia articles (need \(totalNeeded)). Please adjust your filters."
+                return
             }
-            tries += 1
+            
+            sharedWikipediaTitles = wikipediaCards
+            print("✅ Successfully loaded \(wikipediaCards.count) Wikipedia titles")
+        } catch {
+            candidateLoadingError = "Wikipedia failed: \(error.localizedDescription). Please check your connection or adjust your filters."
+            print("❌ Wikipedia pre-load failed: \(error)")
+            sharedWikipediaTitles = []
+            return
         }
-        if candidateTitles.count < need {
-            // It's fine if we come up a bit short; rerolls can fill.
+    }
+    
+    private func preloadOfflineTitles(totalNeeded: Int) {
+        let subjects = subjectUniverse()
+        var set = Set<String>()
+        var allCards: [Card] = []
+        var cardsPerSubjectCount: [String: Int] = [:]
+        
+        // Initialize counters
+        for subject in subjects {
+            cardsPerSubjectCount[subject] = 0
         }
+        
+        // Round-robin distribution to ensure each subject gets representation
+        while allCards.count < totalNeeded {
+            var foundCardThisRound = false
+            
+            for subject in subjects {
+                if allCards.count >= totalNeeded { break }
+                
+                let pool = TitleBank.pool(for: subject).shuffled()
+                
+                // Find next available card from this subject
+                for title in pool {
+                    let norm = title.lowercased()
+                    if !set.contains(norm) {
+                        let card = Card(title: title, subject: subject)
+                        allCards.append(card)
+                        set.insert(norm)
+                        cardsPerSubjectCount[subject]! += 1
+                        foundCardThisRound = true
+                        break
+                    }
+                }
+            }
+            
+            // If no cards found in any subject this round, break to avoid infinite loop
+            if !foundCardThisRound {
+                break
+            }
+        }
+        
+        sharedWikipediaTitles = allCards
+    }
+    
+    private func generateCandidatesFromSharedPool() {
+        print("🎲 GameStore.generateCandidatesFromSharedPool() - generating \(settings.titlesPerPlayer) candidates")
+        let existingTitles = Set(allCards.map { $0.title.lowercased() })
+        let availableTitles = sharedWikipediaTitles.filter { card in
+            !existingTitles.contains(card.title.lowercased())
+        }
+        print("📋 Available titles after deduplication: \(availableTitles.count)")
+        
+        let needed = settings.titlesPerPlayer
+        
+        // Group available titles by their subject for diversity
+        let titlesBySubject = Dictionary(grouping: availableTitles) { $0.subject }
+        let uniqueSubjects = Array(titlesBySubject.keys)
+        print("🎨 Subject diversity: \(uniqueSubjects.joined(separator: ", "))")
+        
+        var diverseTitles: [Card] = []
+        
+        if !uniqueSubjects.isEmpty {
+            // Round-robin distribution to ensure each subject gets representation
+                var usedTitles = Set<UUID>()
+            
+            while diverseTitles.count < needed && diverseTitles.count < availableTitles.count {
+                var foundCardThisRound = false
+                
+                for subject in uniqueSubjects {
+                    if diverseTitles.count >= needed { break }
+                    
+                    if let subjectTitles = titlesBySubject[subject] {
+                        // Find next unused title from this subject
+                        for title in subjectTitles.shuffled() {
+                            if !usedTitles.contains(title.id) {
+                                diverseTitles.append(title)
+                                usedTitles.insert(title.id)
+                                foundCardThisRound = true
+                                break
+                            }
+                        }
+                    }
+                }
+                
+                // If no cards found in any subject this round, break to avoid infinite loop
+                if !foundCardThisRound {
+                    break
+                }
+            }
+        }
+        
+        // If we still don't have enough, fill with any remaining available titles
+        if diverseTitles.count < needed {
+            let usedIds = Set(diverseTitles.map { $0.id })
+            let remaining = availableTitles.filter { !usedIds.contains($0.id) }
+            let additionalNeeded = needed - diverseTitles.count
+            diverseTitles.append(contentsOf: Array(remaining.shuffled().prefix(additionalNeeded)))
+        }
+        
+        // Final shuffle and take what we need
+        candidateTitles = Array(diverseTitles.shuffled().prefix(needed))
+        print("✅ Generated \(candidateTitles.count) diverse candidates for player")
+        
+        // Go to picks screen immediately since we already have the titles
+        stage = .intakePicks
+        print("✅ Stage changed to: .intakePicks")
     }
 
     func reroll(card id: UUID) {
@@ -237,7 +430,20 @@ final class GameStore: ObservableObject {
         existing.formUnion(globalExisting)
         
         // keep trying until we find a replacement
-        if let new = drawOneCard(avoid: existing) {
+        var newCard: Card? = nil
+        
+        if settings.contentSource == .wikipedia {
+            // For Wikipedia, use shared pool
+            let availableTitles = sharedWikipediaTitles.filter { card in
+                !existing.contains(card.title.lowercased())
+            }
+            newCard = availableTitles.randomElement()
+        } else {
+            // For offline, use the old logic
+            newCard = drawOneCard(avoid: existing)
+        }
+        
+        if let new = newCard {
             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                 candidateTitles[idx] = new
             }
@@ -260,6 +466,7 @@ final class GameStore: ObservableObject {
         let trimmedName = pendingName.trimmingCharacters(in: .whitespacesAndNewlines)
         let p = Player(name: trimmedName.isEmpty ? defaultPlayerName() : trimmedName,
                        team: pendingTeam)
+        print("✓ GameStore.submitPlayerAndPicks() - player: '\(p.name)' (\(p.team)), picks: \(selectedPicks.count)")
         players.append(p)
         if p.team == .A { teamAOrder.append(p) } else { teamBOrder.append(p) }
         
@@ -270,6 +477,7 @@ final class GameStore: ObservableObject {
         var added = 0
         var globalLower = Set(allCards.map { $0.title.lowercased() })
         let chosen = candidateTitles.filter { selectedPicks.contains($0.id) }
+        print("🃏 Selected titles: \(chosen.map { $0.title }.joined(separator: ", "))")
 
         for card in chosen {
             let low = card.title.lowercased()
@@ -286,6 +494,7 @@ final class GameStore: ObservableObject {
             globalLower.insert(extra.title.lowercased())
             added += 1
         }
+        print("🃋 Total cards in game deck: \(allCards.count)")
 
         // Move to next intake target
         advanceIntakePointer()
@@ -300,6 +509,7 @@ final class GameStore: ObservableObject {
     private func advanceIntakePointer() {
         // Cycle through team A first, then team B, as spec says "collect Team A first"
         let totalCollected = players.count
+        print("📊 GameStore.advanceIntakePointer() - collected \(totalCollected)/\(intakeExpectedCount) players")
         if totalCollected < intakeExpectedCount {
             // still collecting team A until half rounded down?
             let half = intakeExpectedCount / 2
@@ -308,12 +518,16 @@ final class GameStore: ObservableObject {
             } else {
                 intakeTeamCollecting = .B
             }
+            print("➡️ Next player from \(intakeTeamCollecting) (A: \(teamAOrder.count), B: \(teamBOrder.count))")
             stage = .intakeHandoff
+            print("✅ Stage changed to: .intakeHandoff")
         } else {
             // Intake done → Round 1 intro
+            print("🎉 Player intake complete! Starting game with \(allCards.count) cards")
             currentRound = .one
             currentTeam = settings.startingTeam
             stage = .roundIntro
+            print("✅ Stage changed to: .roundIntro (Round \(currentRound.rawValue))")
         }
     }
 
@@ -321,18 +535,22 @@ final class GameStore: ObservableObject {
 
     private func resetDeckForRound() {
         // Same cards, shuffle between rounds, stable during round
+        print("🎲 GameStore.resetDeckForRound() - shuffling \(allCards.count) cards for round \(currentRound.rawValue)")
         deck = allCards.shuffled()
     }
 
     func startRound() {
+        print("🏁 GameStore.startRound() - starting \(currentRound.title)")
         if deck.isEmpty { resetDeckForRound() }
         stage = .turnHandoff
+        print("✅ Stage changed to: .turnHandoff")
         setNextClueGiverIfNeeded()
     }
 
     func setNextClueGiverIfNeeded() {
         // Check if we have a bonus time player who should go first
         if let bonusPlayer = bonusTimePlayer {
+            print("⏱️ GameStore.setNextClueGiverIfNeeded() - bonus time player: \(bonusPlayer.name) gets priority")
             clueGiver = bonusPlayer
             currentTeam = bonusPlayer.team
             return
@@ -341,6 +559,7 @@ final class GameStore: ObservableObject {
         // Pick next in team rotation; alternate teams each turn
         let order = (currentTeam == .A) ? teamAOrder : teamBOrder
         guard !order.isEmpty else {
+            print("⚠️ GameStore.setNextClueGiverIfNeeded() - no players in \(currentTeam)")
             clueGiver = nil
             return
         }
@@ -348,6 +567,7 @@ final class GameStore: ObservableObject {
         let turnsForTeam = turnsTaken(for: currentTeam)
         let idx = turnsForTeam % order.count
         clueGiver = order[idx]
+        print("🎯 GameStore.setNextClueGiverIfNeeded() - \(currentTeam) turn \(turnsForTeam + 1): \(clueGiver?.name ?? "unknown")")
     }
 
     private func turnsTaken(for team: Team) -> Int {
@@ -367,7 +587,9 @@ final class GameStore: ObservableObject {
 
 
     func beginTurn() {
+        print("🗣️ GameStore.beginTurn() - \(clueGiver?.name ?? "unknown")'s turn begins")
         guard !deck.isEmpty else {
+            print("🃏 Deck is empty, ending round")
             endRoundIfNeeded()
             return
         }
@@ -378,17 +600,21 @@ final class GameStore: ObservableObject {
         // Use bonus time if this player completed the previous round
         if let bonusPlayer = bonusTimePlayer, bonusPlayer.id == clueGiver?.id, savedBonusTime > 0 {
             timeRemaining = min(savedBonusTime, settings.timerSeconds)
+            print("⏱️ Using bonus time: \(timeRemaining)s (was \(savedBonusTime)s)")
             // Clear the bonus after using it
             savedBonusTime = 0
             bonusTimePlayer = nil
         } else {
             timeRemaining = settings.timerSeconds
+            print("⏰ Standard timer: \(timeRemaining)s")
         }
         
         initialDeckSize = deck.count
         cardShownAt = Date()
         turnActive = true
         stage = .turn
+        print("✅ Stage changed to: .turn")
+        print("🃏 Deck size: \(deck.count), first card: \(deck.first?.title ?? "none")")
         
         // Track that this player is taking a turn
         if let clueGiver = clueGiver {
@@ -403,6 +629,7 @@ final class GameStore: ObservableObject {
                 if self.turnActive && !self.turnPaused && self.timeRemaining > 0 {
                     self.timeRemaining -= 1
                     if self.timeRemaining == 0 {
+                        print("⏰ Timer expired! Ending turn")
                         Haptics.rigid()
                         self.finishTurnToRecap(reason: .timerExpired)
                     }
@@ -458,7 +685,9 @@ final class GameStore: ObservableObject {
     }
     
     func savePauseSettings() {
-        settings.timerSeconds = pendingTimerSeconds
+        var updatedSettings = settings
+        updatedSettings.timerSeconds = pendingTimerSeconds
+        settings = updatedSettings
         showingPauseSettings = false
     }
     
@@ -502,6 +731,7 @@ final class GameStore: ObservableObject {
 
         // Remove current top
         let current = deck.removeFirst()
+        print("✓ GameStore.markCorrect() - '\(current.title)' in \(String(format: "%.1f", d))s")
         // Original index is always 0 here (top of deck)
         let ev = CorrectEvent(card: current, originalIndex: 0, duration: d, highlighted: true)
         thisTurnCorrect.append(ev)
@@ -512,6 +742,7 @@ final class GameStore: ObservableObject {
         }
 
         Haptics.success()
+        print("🎉 Total correct this turn: \(thisTurnCorrect.count), remaining cards: \(deck.count)")
 
         // Check for turn end conditions
         checkTurnEndConditions()
@@ -519,6 +750,9 @@ final class GameStore: ObservableObject {
         // If turn is still active, show next card
         if turnActive {
             cardShownAt = Date()
+            if !deck.isEmpty {
+                print("📏 Next card: \(deck.first?.title ?? "none")")
+            }
         }
     }
 
@@ -526,6 +760,7 @@ final class GameStore: ObservableObject {
         guard turnActive, !deck.isEmpty else { return }
         guard currentRound != .one else { return } // disabled in round 1
         guard !skipLocked else {
+            print("⛔ Skip locked - turn ending soon")
             Haptics.warning()
             return
         }
@@ -533,6 +768,7 @@ final class GameStore: ObservableObject {
         let card = deck.removeFirst()
         deck.append(card)
         skipCount += 1
+        print("⏭️ GameStore.skipCard() - '\(card.title)' skipped (\(skipCount) total skips)")
         Haptics.tap()
 
         // Check for turn end conditions
@@ -541,16 +777,19 @@ final class GameStore: ObservableObject {
         // If turn is still active, reset show-time for duration tracking
         if turnActive {
             cardShownAt = Date()
+            print("📏 Next card: \(deck.first?.title ?? "none")")
         }
     }
 
     func finishTurnToRecap(reason: TurnEndReason = .manual) {
+        print("🏁 GameStore.finishTurnToRecap() - reason: \(reason), correct: \(thisTurnCorrect.count)")
         // Turn stops; current top card (unfinished) stays and will resume next turn (bottom push on timeout per spec)
         // Spec: "Timer end: auto-opens Turn Recap; current card goes to bottom."
         // Only cycle the card if the timer ran out (player was stuck on it)
         if reason == .timerExpired && !deck.isEmpty {
             let top = deck.removeFirst()
             deck.append(top)
+            print("📏 Timeout - moved '\(top.title)' to bottom of deck")
         }
         turnActive = false
         timerCancellable?.cancel()
@@ -568,13 +807,16 @@ final class GameStore: ObservableObject {
             teamBTurns += 1
         }
         roundScores[currentRound.rawValue] = r
+        print("📊 Scores updated - \(currentTeam): +\(thisTurnCorrect.count) (A: \(cumulativeA), B: \(cumulativeB))")
 
         // Store the reason and show notification for all turn ends except skip cycle complete
         lastTurnEndReason = reason
         if reason == .skipCycleComplete {
             stage = .recap
+            print("✅ Stage changed to: .recap")
         } else {
             stage = .turnComplete
+            print("✅ Stage changed to: .turnComplete")
         }
         Haptics.soft()
     }
@@ -610,8 +852,12 @@ final class GameStore: ObservableObject {
     }
 
     func recapDoneNextHandoff() {
+        print("🗓️ GameStore.recapDoneNextHandoff() - processing recap and moving to next turn")
         // Handle untoggled cards - put them at bottom of deck and remove from score
         let untoggled = thisTurnCorrect.filter { !$0.highlighted }
+        if !untoggled.isEmpty {
+            print("❌ Removing \(untoggled.count) untoggled cards from score")
+        }
         for ev in untoggled {
             // Put card at bottom of deck
             deck.append(ev.card)
@@ -634,6 +880,7 @@ final class GameStore: ObservableObject {
         
         // If there were untoggled cards and this player had bonus time, remove the bonus
         if !untoggled.isEmpty && bonusTimePlayer?.id == clueGiver?.id {
+            print("⏱️ Removing bonus time due to untoggled cards")
             savedBonusTime = 0
             bonusTimePlayer = nil
         }
@@ -643,13 +890,17 @@ final class GameStore: ObservableObject {
         
         // All corrects are already counted. Move to next team handoff or end round.
         if deck.isEmpty {
+            print("🃏 Deck empty - ending round")
             endRoundIfNeeded()
             return
         }
         // Alternate to the other team for next turn
-        currentTeam = (currentTeam == .A) ? .B : .A
+        let nextTeam: Team = (currentTeam == .A) ? .B : .A
+        currentTeam = nextTeam
+        print("➡️ Switching to \(currentTeam) for next turn")
         setNextClueGiverIfNeeded()
         stage = .turnHandoff
+        print("✅ Stage changed to: .turnHandoff")
     }
 
     private func endRoundIfNeeded() {
@@ -668,14 +919,19 @@ final class GameStore: ObservableObject {
     }
 
     func proceedToNextRoundOrEnd() {
+        print("🔄 GameStore.proceedToNextRoundOrEnd() - current round: \(currentRound.rawValue)")
         switch currentRound {
         case .one:
             currentRound = .two
+            print("✅ Advanced to Round 2")
         case .two:
             currentRound = .three
+            print("✅ Advanced to Round 3")
         case .three:
             // End of game
+            print("🏆 Game complete!")
             stage = .gameEnd
+            print("✅ Stage changed to: .gameEnd")
             return
         }
         // Reset deck (same cards), shuffle again
@@ -684,6 +940,7 @@ final class GameStore: ObservableObject {
         currentTeam = settings.startingTeam
         setNextClueGiverIfNeeded()
         stage = .roundIntro
+        print("✅ Stage changed to: .roundIntro")
     }
 
     // MARK: - Stats (computed when round ends)

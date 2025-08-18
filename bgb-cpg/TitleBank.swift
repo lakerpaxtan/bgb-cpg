@@ -35,38 +35,21 @@ enum TitleBank {
         "Neapolitan Pizza","Pad Thai","Dim Sum","Apple Pie","Chocolate Cake","Fish and Chips","Boba Tea"
     ]
 
-    static func pool(for subject: Subject) -> [String] {
-        switch subject {
-        case .people: return people
-        case .places: return places
-        case .filmTV: return filmTV
-        case .music: return music
-        case .sports: return sports
-        case .scienceTech: return scienceTech
-        case .history: return history
-        case .foodDrink: return foodDrink
-        case .everything:
+    static func pool(for subject: String) -> [String] {
+        switch subject.lowercased() {
+        case "people": return people
+        case "places": return places
+        case "film/tv", "filmtv": return filmTV
+        case "music": return music
+        case "sports": return sports
+        case "science/tech", "sciencetech": return scienceTech
+        case "history": return history
+        case "food/drink", "fooddrink": return foodDrink
+        case "everything":
+            return people + places + filmTV + music + sports + scienceTech + history + foodDrink
+        default:
             return people + places + filmTV + music + sports + scienceTech + history + foodDrink
         }
     }
 }
 
-// Basic filters from settings spec
-enum TitleFilter {
-    static func isValid(_ title: String, filters: Filters) -> Bool {
-        if filters.blockNSFW {
-            // Bank is already clean.
-        }
-        if filters.excludeYearsDates, title.rangeOfCharacter(from: .decimalDigits) != nil {
-            return false
-        }
-        if filters.excludeDisambiguation {
-            if title.lowercased().contains("(disambiguation)") { return false }
-        }
-        if filters.excludeListsCategories {
-            let low = title.lowercased()
-            if low.hasPrefix("list of") || low.hasPrefix("category:") { return false }
-        }
-        return true
-    }
-}

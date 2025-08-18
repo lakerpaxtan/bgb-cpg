@@ -34,40 +34,31 @@ struct SettingsView: View {
                         .frame(width: 60)
                 }
 
-                // Players
-                Group {
-                    Stepper("Players: \(s.players)", value: $s.players, in: 4...20)
-                }
-
-                Divider().padding(.vertical, 8)
-
-                // Wikipedia Cards
-                Group {
-                    Text("Wikipedia Cards").font(.title3.bold())
-
-                    Stepper("Candidates per player: \(s.titlesPerPlayer)", value: $s.titlesPerPlayer, in: 6...15)
-                    Stepper("Picks per player: \(s.picksPerPlayer)", value: $s.picksPerPlayer, in: 2...5)
-
-                    Text("Subjects")
-                        .font(.headline)
-                    SubjectsChips(selected: $s.filters.subjects)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Toggle("No years/dates", isOn: $s.filters.excludeYearsDates)
-                        Toggle("No disambiguation", isOn: $s.filters.excludeDisambiguation)
-                        Toggle("No lists/categories", isOn: $s.filters.excludeListsCategories)
-                        Toggle("Block NSFW", isOn: $s.filters.blockNSFW)
-                    }
-                }
-
-                Divider().padding(.vertical, 8)
-
                 // Gameplay
                 Group {
                     Text("Gameplay").font(.title3.bold())
+                    Stepper("Players: \(s.players)", value: $s.players, in: 4...20)
                     Stepper("Turn timer: \(s.timerSeconds)s", value: $s.timerSeconds, in: 30...120, step: 5)
+                    Stepper("Candidates per player: \(s.titlesPerPlayer)", value: $s.titlesPerPlayer, in: 6...15)
+                    Stepper("Picks per player: \(s.picksPerPlayer)", value: $s.picksPerPlayer, in: 2...5)
                     Text("Skips handled by round rules.")
                         .font(.footnote).foregroundStyle(.secondary)
+                }
+
+                Divider().padding(.vertical, 8)
+
+                // Content Source
+                Group {
+                    Text("Content Source").font(.title3.bold())
+                    
+                    ContentSourcePicker(selected: $s.contentSource)
+                    
+                    // Show appropriate filters based on content source
+                    if s.contentSource == .offline {
+                        OfflineFilters(filters: $s.filters)
+                    } else {
+                        WikipediaFiltersView(filters: $s.wikipediaFilters, store: store)
+                    }
                 }
 
                 Text("Hint: Players add their names during the pass-around.")
@@ -75,15 +66,59 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 8)
 
-                BigButton(title: "Next — Player Intake") {
+                LoadingButton(
+                    isLoading: store.loadingCandidates,
+                    normalTitle: "Next — Player Intake",
+                    loadingTitle: "Loading..."
+                ) {
+                    store.candidateLoadingError = nil // Clear any previous errors
                     store.settings = s
                     store.startIntake()
+                }
+                .alert("Loading Error", isPresented: .constant(store.candidateLoadingError != nil)) {
+                    Button("OK") {
+                        store.candidateLoadingError = nil
+                    }
+                } message: {
+                    Text(store.candidateLoadingError ?? "")
                 }
                 .padding(.top, 10)
             }
             .padding(24)
         }
         .onAppear { s = store.settings }
+    }
+    
+}
+
+struct LoadingButton: View {
+    let isLoading: Bool
+    let normalTitle: String
+    let loadingTitle: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                if isLoading {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .foregroundStyle(.white)
+                    Text(loadingTitle)
+                        .font(.title3.weight(.semibold))
+                } else {
+                    Text(normalTitle)
+                        .font(.title3.weight(.semibold))
+                }
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(isLoading ? Color.gray : Color.blue)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .disabled(isLoading)
+        .animation(.easeInOut(duration: 0.2), value: isLoading)
     }
 }
 
@@ -272,6 +307,17 @@ struct IntakePicksView: View {
                     .background(Color.black.opacity(0.06))
                     .clipShape(Capsule())
             }
+            
+            // Show loading error if any
+            if let error = store.candidateLoadingError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.orange.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
 
             ScrollView {
                 LazyVStack(spacing: 10) {
@@ -334,7 +380,7 @@ private struct CandidateRow: View {
                     Text(card.title)
                         .font(.headline)
                         .foregroundStyle(.primary)
-                    Text(card.subject.rawValue)
+                    Text(card.subject)
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -357,5 +403,200 @@ private struct CandidateRow: View {
         .buttonStyle(.plain)
         .shadow(color: .black.opacity(0.04), radius: 6, y: 3)
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: selected)
+    }
+}
+
+
+// MARK: - Content Source Components
+
+struct ContentSourcePicker: View {
+    @Binding var selected: ContentSource
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(ContentSource.allCases, id: \.self) { source in
+                let isSelected = selected == source
+                Button {
+                    selected = source
+                    Haptics.tap()
+                } label: {
+                    Text(source.displayName)
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 16).padding(.vertical, 8)
+                        .background(isSelected ? Color.blue.opacity(0.18) : Color.gray.opacity(0.12))
+                        .foregroundStyle(isSelected ? Color.blue : Color.secondary)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+    }
+}
+
+
+struct OfflineFilters: View {
+    @Binding var filters: Filters
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Subjects")
+                .font(.headline)
+            SubjectsChips(selected: $filters.subjects)
+        }
+    }
+}
+
+struct WikipediaFiltersView: View {
+    @Binding var filters: WikipediaFilters
+    let store: GameStore
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if store.wikipediaService.status == .available {
+                // Categories
+                Text("Categories")
+                    .font(.headline)
+                WikipediaCategoryChips(selected: $filters.categories, availableCategories: store.wikipediaService.availableCategories)
+                
+                // Word Limit
+                Text("Word Limit: \(filters.wordLimit.lowerBound)-\(filters.wordLimit.upperBound) words")
+                    .font(.headline)
+                RangeSlider(range: $filters.wordLimit, bounds: 1...10, step: 1)
+                
+                // Popularity
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Popularity: \(filters.popularityPercentile.lowerBound)%-\(filters.popularityPercentile.upperBound)%")
+                        .font(.headline)
+                    Text("Filters articles by how well-known they are. 0%=obscure, 100%=widely known")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                RangeSlider(range: $filters.popularityPercentile, bounds: 0...100, step: 5)
+                
+                // Creation Years
+                Text("Created: \(filters.createdYears.lowerBound)-\(filters.createdYears.upperBound)")
+                    .font(.headline)
+                RangeSlider(range: $filters.createdYears, bounds: 2001...2025, step: 1)
+                
+                // Update Years
+                Text("Updated: \(filters.updatedYears.lowerBound)-\(filters.updatedYears.upperBound)")
+                    .font(.headline)
+                RangeSlider(range: $filters.updatedYears, bounds: 2020...2025, step: 1)
+            } else {
+                Text("Wikipedia filters will appear when Wikipedia is available")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .italic()
+            }
+        }
+    }
+}
+
+struct WikipediaCategoryChips: View {
+    @Binding var selected: Set<WikipediaCategory>
+    let availableCategories: [WikipediaCategory]
+    
+    var body: some View {
+        FlowLayout {
+            ForEach(availableCategories, id: \.self) { category in
+                let isSelected = selected.contains(category)
+                Button {
+                    if isSelected {
+                        selected.remove(category)
+                    } else {
+                        selected.insert(category)
+                    }
+                    if selected.isEmpty && !availableCategories.isEmpty {
+                        selected = [availableCategories.first!] // Default to at least one
+                    }
+                    Haptics.tap()
+                } label: {
+                    Text(category.displayName)
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(isSelected ? Color.blue.opacity(0.18) : Color.gray.opacity(0.12))
+                        .foregroundStyle(isSelected ? Color.blue : Color.secondary)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+struct RangeSlider: View {
+    @Binding var range: ClosedRange<Int>
+    let bounds: ClosedRange<Int>
+    let step: Int
+    
+    @State private var lowerValue: Double
+    @State private var upperValue: Double
+    
+    init(range: Binding<ClosedRange<Int>>, bounds: ClosedRange<Int>, step: Int) {
+        self._range = range
+        self.bounds = bounds
+        self.step = step
+        self._lowerValue = State(initialValue: Double(range.wrappedValue.lowerBound))
+        self._upperValue = State(initialValue: Double(range.wrappedValue.upperBound))
+    }
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Text("\(bounds.lowerBound)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("\(bounds.upperBound)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            
+            VStack(spacing: 8) {
+                HStack {
+                    Text("Min: \(Int(lowerValue))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                
+                Slider(value: $lowerValue, 
+                       in: Double(bounds.lowerBound)...Double(bounds.upperBound),
+                       step: Double(step)) { _ in
+                    // Ensure lower doesn't exceed upper
+                    if lowerValue > upperValue {
+                        upperValue = lowerValue
+                    }
+                    updateRange()
+                }
+                .accentColor(.blue)
+                
+                HStack {
+                    Text("Max: \(Int(upperValue))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                
+                Slider(value: $upperValue,
+                       in: Double(bounds.lowerBound)...Double(bounds.upperBound),
+                       step: Double(step)) { _ in
+                    // Ensure upper doesn't go below lower
+                    if upperValue < lowerValue {
+                        lowerValue = upperValue
+                    }
+                    updateRange()
+                }
+                .accentColor(.blue)
+            }
+        }
+    }
+    
+    private func updateRange() {
+        let newRange = Int(lowerValue)...Int(upperValue)
+        if range != newRange {
+            range = newRange
+        }
     }
 }

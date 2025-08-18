@@ -26,10 +26,10 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
     * `.settings` → `SettingsView`
     * `.intakeHandoff` → `IntakeHandoffView`
     * `.intakeName` → `IntakeNameView`
+    * `.intakeLoading` → `IntakeLoadingView`
     * `.intakePicks` → `IntakePicksView`
     * `.roundIntro` → `RoundIntroView`
     * `.turnHandoff` → `TurnHandoffView`
-    * `.turnReady` → `TurnReadyView`
     * `.turn` → `TurnView`
     * `.turnPaused` → `TurnPausedView`
     * `.turnSkipComplete` → `TurnSkipCompleteView`
@@ -56,7 +56,10 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
   * Tokenization for “no-say” chips (leading article optional).
 
 * **`TitleBank.swift`**
-  Offline “Wikipedia-ish” title pools per subject + simple filters (years, lists, disambiguation). Lets the app run with no network.
+  Offline "Wikipedia-ish" title pools per subject + simple filters (years, lists, disambiguation). Lets the app run with no network.
+
+* **`WikipediaService.swift`**
+  Optional Wikipedia integration that fetches live articles based on categories and filters. Provides fallback to offline mode if Wikipedia is unavailable.
 
 * **`Components.swift`**
   Shared UI: `BigButton`, `OutlineButton`, `TokenChips`, `FlowLayout`, lightweight `ConfettiView`.
@@ -90,8 +93,8 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
 
 ### 2) Intake (Team A then Team B)
 
-* `IntakeHandoffView` → **I’m next** → `store.intakeProceed()` → `.intakeName`
-* `IntakeNameView` → **Next** → `store.intakeSaveNameAndShowPicks()` → `.intakePicks`
+* `IntakeHandoffView` → **I'm next** → `store.intakeProceed()` → `.intakeName`
+* `IntakeNameView` → **Next** → `store.intakeSaveNameAndShowPicks()` → preloads content → `.intakeLoading` → `.intakePicks`
 * `IntakePicksView`
 
   * Shows N candidates (`store.generateCandidates()`).
@@ -111,8 +114,7 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
   * Sets next `clueGiver` based on team rotation.
   * Stage → `.turnHandoff`.
 
-* `TurnHandoffView` → **I'm {ClueGiver} — Get Ready** → `.turnReady`
-* `TurnReadyView` → **Start Timer** → `store.beginTurn()` → `.turn`
+* `TurnHandoffView` → **I'm {ClueGiver} — Get Ready** → `store.beginTurn()` → `.turn`
 
 ### 4) Turn
 
@@ -164,8 +166,8 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
   → .howTo | .settings
 .settings
   → .intakeHandoff
-.intakeHandoff → .intakeName → .intakePicks → (repeat) … → .roundIntro
-.roundIntro → .turnHandoff → .turnReady → .turn → (.turnPaused | .turnSkipComplete | .turnComplete)
+.intakeHandoff → .intakeName → .intakeLoading → .intakePicks → (repeat) … → .roundIntro
+.roundIntro → .turnHandoff → .turn → (.turnPaused | .turnSkipComplete | .turnComplete)
 .turnPaused → (.turn | .recap | .home via End Game)
 .turnSkipComplete → .recap
 .turnComplete → .recap
@@ -197,6 +199,11 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
 * Buttons: `BigButton` for primary, `OutlineButton` for secondary.
 * Animations: springy inserts/removals for card transitions; short fades for screens.
 * Haptics: light impact on taps; success/warning/error where it helps.
+
+## Development & Debugging
+
+* **Logging**: Comprehensive logging throughout GameStore and ContentView provides detailed app flow tracking. Watch Xcode Console to understand the execution path, state transitions, and function calls in real-time.
+* **Print statements**: Use emoji prefixes (🏠 for home, ⚙️ for settings, 🎯 for turns, etc.) to categorize log messages by feature area.
 
 ---
 

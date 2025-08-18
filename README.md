@@ -6,8 +6,8 @@ A fast party game played in 3 rounds with the **same deck** getting progressivel
 
 ### Quick Start
 
-1. Tap **Start Game** → set players, starting team, timer, and card options.
-2. **Pass the phone** to collect player names and each player’s card picks.
+1. Tap **Start Game** → set players, starting team, timer, and card options (offline or Wikipedia content).
+2. **Pass the phone** to collect player names and each player's card picks.
 3. Play **Round 1 → Round 2 → Round 3**. Scores show between rounds.
 4. Final scoreboard + confetti. **Rematch** or **New Game**.
 
@@ -71,6 +71,11 @@ Skips: **Allowed** until you've processed all cards available at turn start, the
 * Ties are fine; the app calls it out.
 
 ---
+
+## Content Sources
+
+* **Offline Mode**: Uses curated title pools by subject (People, Places, Film/TV, etc.) — works without internet.
+* **Wikipedia Mode**: Fetches live articles from Wikipedia categories with customizable filters. Falls back to offline mode if Wikipedia is unavailable.
 
 ## Player Intake
 

@@ -18,7 +18,7 @@ enum Team: String, Codable, CaseIterable {
 enum Stage {
     case home, howTo, settings
     case intakeHandoff, intakeName, intakePicks
-    case roundIntro, turnHandoff, turnReady, turn, turnPaused, turnSkipComplete, turnComplete, recap, roundEnd, gameEnd, gameStats
+    case roundIntro, turnHandoff, turn, turnPaused, turnSkipComplete, turnComplete, recap, roundEnd, gameEnd, gameStats
 }
 
 enum RoundPhase: Int, Codable {
@@ -53,10 +53,6 @@ enum RoundPhase: Int, Codable {
 
 struct Filters: Codable {
     var subjects: Set<Subject>
-    var excludeYearsDates: Bool
-    var excludeDisambiguation: Bool
-    var excludeListsCategories: Bool
-    var blockNSFW: Bool
 }
 
 enum Subject: String, Codable, CaseIterable, Hashable {
@@ -80,21 +76,71 @@ struct Acceptance: Codable {
     var ignorePunctuation: Bool
 }
 
-struct SkipsRule: Codable {
-    var round1: SkipMode
-    var round2: SkipMode
-    var round3: SkipMode
-
-    enum SkipMode: String, Codable {
-        case disabled
-        case unlimited_until_return_to_start_card
-    }
-}
 
 struct StatsPref: Codable {
     var showBetweenRounds: Bool
     var highlightsPerRound: Int
 }
+
+// MARK: - Content Sources
+
+enum ContentSource: String, Codable, CaseIterable {
+    case offline = "Offline"
+    case wikipedia = "Wikipedia"
+    
+    var displayName: String { rawValue }
+}
+
+enum ContentSourceStatus: Equatable {
+    case unknown
+    case checking
+    case available
+    case unavailable(Error)
+    
+    static func == (lhs: ContentSourceStatus, rhs: ContentSourceStatus) -> Bool {
+        switch (lhs, rhs) {
+        case (.unknown, .unknown), (.checking, .checking), (.available, .available):
+            return true
+        case (.unavailable(let lhsError), .unavailable(let rhsError)):
+            return lhsError.localizedDescription == rhsError.localizedDescription
+        default:
+            return false
+        }
+    }
+}
+
+// Dynamic Wikipedia category fetched from API
+struct WikipediaCategory: Codable, Hashable, Identifiable {
+    let id: String // The category name with underscores
+    let title: String // Display name
+    
+    var displayName: String { title }
+    var categoryName: String { id }
+    
+    init(id: String, title: String) {
+        self.id = id
+        self.title = title
+    }
+}
+
+struct WikipediaFilters: Codable {
+    var categories: Set<WikipediaCategory>
+    var wordLimit: ClosedRange<Int>
+    var popularityPercentile: ClosedRange<Int> // 0=obscure, 100=viral
+    var createdYears: ClosedRange<Int>
+    var updatedYears: ClosedRange<Int>
+    
+    static let `default` = WikipediaFilters(
+        categories: Set(), // Will be populated when categories are loaded
+        wordLimit: 1...5,
+        popularityPercentile: 20...80,
+        createdYears: 2001...2025,
+        updatedYears: 2020...2025
+    )
+}
+
+// ClosedRange already conforms to Codable in Swift 5.5+
+
 
 struct Settings: Codable {
     var players: Int
@@ -102,9 +148,10 @@ struct Settings: Codable {
     var timerSeconds: Int
     var titlesPerPlayer: Int
     var picksPerPlayer: Int
-    var filters: Filters
+    var contentSource: ContentSource
+    var filters: Filters // For offline mode
+    var wikipediaFilters: WikipediaFilters // For Wikipedia mode
     var acceptance: Acceptance
-    var skips: SkipsRule
     var stats: StatsPref
 }
 
@@ -163,9 +210,9 @@ struct PlayerStats: Identifiable, Codable {
 struct Card: Identifiable, Hashable, Codable {
     let id: UUID
     let title: String
-    let subject: Subject
+    let subject: String // Now using String instead of Subject enum
 
-    init(id: UUID = UUID(), title: String, subject: Subject) {
+    init(id: UUID = UUID(), title: String, subject: String) {
         self.id = id
         self.title = title
         self.subject = subject
@@ -203,13 +250,15 @@ extension Settings {
         timerSeconds: 60,
         titlesPerPlayer: 10,
         picksPerPlayer: 3,
+        contentSource: .offline,
         filters: Filters(
-            subjects: [.everything],
-            excludeYearsDates: true,
-            excludeDisambiguation: true,
-            excludeListsCategories: true,
-            blockNSFW: true
+            subjects: [.everything]
+//            excludeYearsDates: true,
+//            excludeDisambiguation: true,
+//            excludeListsCategories: true,
+//            blockNSFW: true
         ),
+        wikipediaFilters: .default,
         acceptance: Acceptance(
             ignoreLeadingArticle: true,
             leadingArticles: ["the","a","an"],
@@ -217,11 +266,6 @@ extension Settings {
             pluralizationStrict: true,
             caseInsensitive: true,
             ignorePunctuation: true
-        ),
-        skips: SkipsRule(
-            round1: .disabled,
-            round2: .unlimited_until_return_to_start_card,
-            round3: .unlimited_until_return_to_start_card
         ),
         stats: StatsPref(showBetweenRounds: true, highlightsPerRound: 3)
     )
