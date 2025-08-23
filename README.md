@@ -2,7 +2,7 @@
 
 ## Wiki-Celebrity
 
-A fast party game played in 3 rounds with the **same deck** getting progressively stricter.
+A fast party charades game played in 3 rounds --- with the **same deck** each time --- getting progressively stricter. Akin to fishbowl! 
 
 ### Quick Start
 
