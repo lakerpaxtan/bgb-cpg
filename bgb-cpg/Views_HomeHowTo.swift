@@ -44,7 +44,6 @@ struct HomeView: View {
 
 struct HowToView: View {
     @EnvironmentObject var store: GameStore
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.presentationMode) var presentationMode
 
     let slides: [String] = [

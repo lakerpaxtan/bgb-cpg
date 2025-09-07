@@ -37,6 +37,7 @@ struct RoundEndView: View {
             Spacer()
 
             BigButton(title: store.currentRound == .three ? "See Final Scores" : "Round \(store.currentRound.rawValue + 1) Rules") {
+                print("➡️ Proceeding from round end")
                 store.proceedToNextRoundOrEnd()
             }
         }
@@ -130,14 +131,17 @@ struct GameEndView: View {
                 Spacer()
 
                 BigButton(title: "View Player Stats") {
+                    print("📊 Showing detailed player statistics")
                     store.showGameStats()
                 }
 
                 OutlineButton(title: "Rematch (same settings)") {
+                    print("🔄 Starting rematch with current players")
                     store.rematchSameSettings()
                 }
 
                 OutlineButton(title: "New Game") {
+                    print("🆕 Starting brand new game")
                     store.newGame()
                 }
             }

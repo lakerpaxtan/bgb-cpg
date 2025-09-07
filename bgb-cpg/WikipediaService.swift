@@ -86,9 +86,9 @@ class WikipediaService: ObservableObject {
                 return WikipediaCategory(id: categoryId, title: displayTitle)
             }
             
-            print("Loaded \(availableCategories.count) Wikipedia categories")
+            print("🌍 Loaded \(availableCategories.count) Wikipedia categories")
         } catch {
-            print("Failed to load Wikipedia categories: \(error)")
+            print("❌ Failed to load Wikipedia categories: \(error)")
             // Fallback to empty list - will show error in UI
             availableCategories = []
         }
@@ -133,7 +133,7 @@ class WikipediaService: ObservableObject {
             throw WikipediaError.invalidURL
         }
 
-        print("🌐 Fetching Wikipedia using URL: \(urlString)")
+        print("🌐 Fetching \(count) articles from category '\(category.title)'")
         
         let (data, _) = try await session.data(from: url)
         let response = try JSONDecoder().decode(WikipediaResponse.self, from: data)
@@ -162,8 +162,7 @@ class WikipediaService: ObservableObject {
                 continue
             }
             
-            // TODO: Add popularity, creation date, and update date filtering
-            // This would require additional API calls to get page metadata
+            // TODO: Advanced filtering (popularity, dates) requires additional API calls for page metadata
             
             let subject = category.title // Use Wikipedia category name directly
             cards.append(Card(title: title, subject: subject))

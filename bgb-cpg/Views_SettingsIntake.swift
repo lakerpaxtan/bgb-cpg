@@ -279,6 +279,7 @@ struct IntakeNameView: View {
 
             VStack(spacing: 12) {
                 BigButton(title: "Next") {
+                    print("➡️ Moving from name entry to title selection")
                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     store.intakeSaveNameAndShowPicks()
                 }
@@ -335,6 +336,7 @@ struct IntakePicksView: View {
                 let buttonTitle = isCorrectCount ? "Submit" : "Please select exactly \(store.settings.picksPerPlayer) titles"
                 
                 BigButton(title: buttonTitle) {
+                    print("📝 Submitting player with \(store.selectedPicks.count) selected titles")
                     store.submitPlayerAndPicks()
                 }
                 .disabled(!isCorrectCount)

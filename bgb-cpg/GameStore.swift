@@ -25,10 +25,10 @@ final class GameStore: ObservableObject {
     @Published var teamAOrder: [Player] = []
     @Published var teamBOrder: [Player] = []
 
-    // The full set of cards for the game (after intake de-dupe)
+    // Master deck: all cards selected during player intake (de-duplicated)
     @Published private(set) var allCards: [Card] = []
 
-    // Deck for current round (stable order until round ends)
+    // Current round's working deck (shuffled between rounds, stable during play)
     @Published private(set) var deck: [Card] = []
 
     // Scores
@@ -44,17 +44,16 @@ final class GameStore: ObservableObject {
     @Published var currentTeam: Team = .A
     @Published var clueGiver: Player? = nil
 
-    // Turn control
+    // Active turn state management
     @Published var timeRemaining: Int = 60
     @Published var turnActive: Bool = false
     @Published var turnPaused: Bool = false
-    @Published var skipLocked: Bool = false
     @Published var skipCount: Int = 0
 
-    // Tracking
+    // Turn performance tracking and timing
     private var timerCancellable: AnyCancellable?
     @Published private(set) var initialDeckSize: Int = 0
-    private var cardShownAt: Date = Date()
+    private var cardShownAt: Date = Date() // Tracks when current card was first shown for duration calculation
     @Published var thisTurnCorrect: [CorrectEvent] = []
 
     // Intake progress
@@ -82,7 +81,7 @@ final class GameStore: ObservableObject {
     // Turn end tracking
     @Published var lastTurnEndReason: TurnEndReason = .manual
     
-    // Bonus time tracking for completing all cards
+    // Bonus time system: completing all cards in a turn saves remaining time for next round
     @Published private(set) var savedBonusTime: Int = 0
     @Published private(set) var bonusTimePlayer: Player? = nil
 
@@ -235,10 +234,11 @@ final class GameStore: ObservableObject {
     }
 
     func intakeSaveNameAndShowPicks() {
-        print("📝 GameStore.intakeSaveNameAndShowPicks() - name: '\(pendingName)', team: \(pendingTeam)")
+        print("📝 Player name entry: '\(pendingName)' joining \(pendingTeam)")
         selectedPicks = []
         
         // Always use pre-loaded shared pool (regardless of source)
+        print("🎲 Generating candidate titles for player selection")
         generateCandidatesFromSharedPool()
     }
 
@@ -415,7 +415,11 @@ final class GameStore: ObservableObject {
     }
 
     func reroll(card id: UUID) {
-        guard let idx = candidateTitles.firstIndex(where: { $0.id == id }) else { return }
+        guard let idx = candidateTitles.firstIndex(where: { $0.id == id }) else { 
+            print("❌ reroll() failed: card \(id) not found in candidates")
+            return 
+        }
+        print("🎲 Rerolling candidate: '\(candidateTitles[idx].title)'")
         
         // If this card was selected, deselect it
         if selectedPicks.contains(id) {
@@ -444,19 +448,24 @@ final class GameStore: ObservableObject {
         }
         
         if let new = newCard {
+            print("✨ Reroll successful: '\(candidateTitles[idx].title)' -> '\(new.title)'")
             withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                 candidateTitles[idx] = new
             }
             Haptics.soft()
+        } else {
+            print("⚠️ Reroll failed: no alternative cards available")
         }
     }
 
     func togglePick(_ id: UUID) {
         if selectedPicks.contains(id) {
             selectedPicks.remove(id)
+            print("📝 Deselected pick (\(selectedPicks.count)/\(settings.picksPerPlayer))")
             Haptics.tap()
         } else {
             selectedPicks.insert(id)
+            print("📝 Selected pick (\(selectedPicks.count)/\(settings.picksPerPlayer))")
             Haptics.tap()
         }
     }
@@ -571,8 +580,7 @@ final class GameStore: ObservableObject {
     }
 
     private func turnsTaken(for team: Team) -> Int {
-        // approximate from per-round scores; not exact, but we just need stable rotation
-        // Better: store counters
+        // Track turn count for fair rotation within each team
         if team == .A {
             return teamATurns
         } else {
@@ -595,7 +603,6 @@ final class GameStore: ObservableObject {
         }
         thisTurnCorrect = []
         skipCount = 0
-        skipLocked = false
         
         // Use bonus time if this player completed the previous round
         if let bonusPlayer = bonusTimePlayer, bonusPlayer.id == clueGiver?.id, savedBonusTime > 0 {
@@ -640,14 +647,22 @@ final class GameStore: ObservableObject {
     }
     
     func pauseTurn() {
-        guard turnActive && !turnPaused else { return }
+        guard turnActive && !turnPaused else { 
+            print("🎯 pauseTurn() blocked: turnActive=\(turnActive), turnPaused=\(turnPaused)")
+            return 
+        }
+        print("⏸️ Turn paused at \(timeRemaining)s remaining")
         turnPaused = true
         stage = .turnPaused
         Haptics.soft()
     }
     
     func unpauseTurn() {
-        guard turnActive && turnPaused else { return }
+        guard turnActive && turnPaused else { 
+            print("🎯 unpauseTurn() blocked: turnActive=\(turnActive), turnPaused=\(turnPaused)")
+            return 
+        }
+        print("▶️ Turn resumed with \(timeRemaining)s remaining")
         turnPaused = false
         stage = .turn
         Haptics.soft()
@@ -708,16 +723,17 @@ final class GameStore: ObservableObject {
     }
     
     private func checkTurnEndConditions() {
+        // Determine if turn should end based on progress through initial deck size
         // Check if we've processed all initially available cards
         if (skipCount + thisTurnCorrect.count >= initialDeckSize) && (skipCount > 0) {
             // Player has cycled through all cards - end turn
-            skipLocked = true
+            print("🔄 Skip cycle complete: processed \(skipCount + thisTurnCorrect.count)/\(initialDeckSize) cards")
             turnActive = false
             stage = .turnSkipComplete
             Haptics.soft()
         } else if deck.isEmpty {
-            // Player completed all remaining cards! End turn immediately
-            // Note: This condition will never happen in skipCard() since it guards against empty deck
+            // All cards completed! Save bonus time for this player
+            // Note: This rarely triggers since skipCard() guards against empty deck
             savedBonusTime = timeRemaining
             bonusTimePlayer = clueGiver
             finishTurnToRecap(reason: .completedAllCards)
@@ -725,7 +741,10 @@ final class GameStore: ObservableObject {
     }
 
     func markCorrect() {
-        guard turnActive, !deck.isEmpty else { return }
+        guard turnActive, !deck.isEmpty else { 
+            print("🎯 markCorrect() blocked: turnActive=\(turnActive), deck.isEmpty=\(deck.isEmpty)")
+            return 
+        }
         let now = Date()
         let d = now.timeIntervalSince(cardShownAt)
 
@@ -747,9 +766,9 @@ final class GameStore: ObservableObject {
         // Check for turn end conditions
         checkTurnEndConditions()
         
-        // If turn is still active, show next card
+        // If turn is still active, show next card and reset timing
         if turnActive {
-            cardShownAt = Date()
+            cardShownAt = Date() // Reset timing for new card
             if !deck.isEmpty {
                 print("📏 Next card: \(deck.first?.title ?? "none")")
             }
@@ -757,12 +776,13 @@ final class GameStore: ObservableObject {
     }
 
     func skipCard() {
-        guard turnActive, !deck.isEmpty else { return }
-        guard currentRound != .one else { return } // disabled in round 1
-        guard !skipLocked else {
-            print("⛔ Skip locked - turn ending soon")
-            Haptics.warning()
-            return
+        guard turnActive, !deck.isEmpty else { 
+            print("🎯 skipCard() blocked: turnActive=\(turnActive), deck.isEmpty=\(deck.isEmpty)")
+            return 
+        }
+        guard currentRound != .one else { 
+            print("🎯 skipCard() blocked: skipping disabled in Round 1")
+            return 
         }
 
         let card = deck.removeFirst()
@@ -774,18 +794,18 @@ final class GameStore: ObservableObject {
         // Check for turn end conditions
         checkTurnEndConditions()
 
-        // If turn is still active, reset show-time for duration tracking
+        // If turn is still active, reset timing for new card after skip
         if turnActive {
-            cardShownAt = Date()
+            cardShownAt = Date() // Reset timing after skip
             print("📏 Next card: \(deck.first?.title ?? "none")")
         }
     }
 
     func finishTurnToRecap(reason: TurnEndReason = .manual) {
         print("🏁 GameStore.finishTurnToRecap() - reason: \(reason), correct: \(thisTurnCorrect.count)")
-        // Turn stops; current top card (unfinished) stays and will resume next turn (bottom push on timeout per spec)
-        // Spec: "Timer end: auto-opens Turn Recap; current card goes to bottom."
-        // Only cycle the card if the timer ran out (player was stuck on it)
+        // Handle different turn end scenarios:
+        // - Timer expired: move unfinished card to bottom (player was stuck)
+        // - Manual/complete: leave deck as-is (player chose to end)
         if reason == .timerExpired && !deck.isEmpty {
             let top = deck.removeFirst()
             deck.append(top)
@@ -826,8 +846,12 @@ final class GameStore: ObservableObject {
     }
 
     func undo(event id: UUID) {
-        guard let idx = thisTurnCorrect.firstIndex(where: { $0.id == id }) else { return }
+        guard let idx = thisTurnCorrect.firstIndex(where: { $0.id == id }) else { 
+            print("❌ undo() failed: event \(id) not found in thisTurnCorrect")
+            return 
+        }
         let ev = thisTurnCorrect.remove(at: idx)
+        print("↩️ Undoing correct answer: '\(ev.card.title)' back to deck position \(ev.originalIndex)")
 
         // Reinsert card at its original position (clamped)
         let pos = max(0, min(ev.originalIndex, deck.count))
@@ -853,7 +877,7 @@ final class GameStore: ObservableObject {
 
     func recapDoneNextHandoff() {
         print("🗓️ GameStore.recapDoneNextHandoff() - processing recap and moving to next turn")
-        // Handle untoggled cards - put them at bottom of deck and remove from score
+        // Process recap results: untoggled cards weren't actually correct, so remove from scoring
         let untoggled = thisTurnCorrect.filter { !$0.highlighted }
         if !untoggled.isEmpty {
             print("❌ Removing \(untoggled.count) untoggled cards from score")
@@ -890,7 +914,7 @@ final class GameStore: ObservableObject {
         
         // All corrects are already counted. Move to next team handoff or end round.
         if deck.isEmpty {
-            print("🃏 Deck empty - ending round")
+            print("🃏 Deck empty after recap processing - ending round")
             endRoundIfNeeded()
             return
         }
@@ -904,16 +928,19 @@ final class GameStore: ObservableObject {
     }
 
     private func endRoundIfNeeded() {
-        // If deck empty, round complete
+        // Determine next stage based on round completion
         if deck.isEmpty {
+            print("🏁 Round \(currentRound.rawValue) complete - all cards played")
             // Skip round complete screen for Round 3, go directly to game end
             if currentRound == .three {
+                print("🏆 Game complete - moving to final scores")
                 stage = .gameEnd
             } else {
+                print("📊 Moving to round end summary")
                 stage = .roundEnd
             }
         } else {
-            // Defensive; usually not hit
+            print("⚠️ endRoundIfNeeded() called but deck not empty (\(deck.count) cards left)")
             stage = .turnHandoff
         }
     }
@@ -994,6 +1021,7 @@ final class GameStore: ObservableObject {
     var isTie: Bool { cumulativeA == cumulativeB }
 
     func rematchSameSettings() {
+        print("🔄 Starting rematch with same players and settings")
         // Keep players and cards, reset scores and round
         cumulativeA = 0
         cumulativeB = 0
@@ -1020,6 +1048,7 @@ final class GameStore: ObservableObject {
     }
 
     func newGame() {
+        print("🆕 Starting completely new game")
         goHome(resetAll: true)
     }
     
@@ -1035,12 +1064,13 @@ final class GameStore: ObservableObject {
 
     func tokens(for title: String) -> [Token] {
         let lower = title.lowercased()
-        // Split on non-letters/numbers
+        // Split title into individual words, ignoring punctuation and special characters
         let parts = lower.split { !$0.isLetter && !$0.isNumber }
         var out: [Token] = []
 
         for (i, p) in parts.enumerated() {
             let word = String(p)
+            // Leading articles (The, A, An) are optional if configured - these appear as gray chips
             let isLeadingArticle = (i == 0) && settings.acceptance.ignoreLeadingArticle &&
                 settings.acceptance.leadingArticles.contains(word)
             out.append(Token(text: word, required: !isLeadingArticle))

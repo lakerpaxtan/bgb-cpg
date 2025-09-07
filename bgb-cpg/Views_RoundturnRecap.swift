@@ -24,6 +24,7 @@ struct RoundIntroView: View {
             Spacer()
 
             BigButton(title: "Start Round \(store.currentRound.rawValue)") {
+                print("🏁 Starting \(store.currentRound.title)")
                 store.startRound()
             }
         }
@@ -53,7 +54,10 @@ struct TurnHandoffView: View {
                 .padding(.top, 4)
 
             BigButton(title: "I'm \(store.clueGiver?.name ?? "Next") — Start Turn",
-                      action: { store.beginTurn() },
+                      action: { 
+                          print("🎯 \(store.clueGiver?.name ?? "Unknown")'s turn starting")
+                          store.beginTurn() 
+                      },
                       fill: store.currentTeam.color)
 
             Spacer()
@@ -248,7 +252,6 @@ struct TurnView: View {
             }
         }
         .padding(24)
-        .onDisappear { /* defensive */ }
         .alert("End Turn?", isPresented: $store.showingEndTurnConfirmation) {
             Button("Cancel", role: .cancel) {
                 store.cancelEndTurn()
@@ -509,6 +512,7 @@ struct RecapView: View {
             Spacer()
 
             BigButton(title: "Done Reviewing") {
+                print("✅ Recap complete - moving to next turn")
                 store.recapDoneNextHandoff()
             }
         }
