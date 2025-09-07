@@ -43,7 +43,7 @@
 # Outstanding Problems
 # (do not cross off problems without checking with me first)
 
-No outstanding problems at this time! 🎉
+1. Remove rematch functionality entirely and rename "New Game" to "Main Menu" - eliminate all rematch-related code and flows, update button text and functionality to simply return to main menu **[In Progress, Please Test]**
 ---
 
 # Completed Problems

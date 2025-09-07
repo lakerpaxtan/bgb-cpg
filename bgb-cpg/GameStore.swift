@@ -1020,32 +1020,6 @@ final class GameStore: ObservableObject {
 
     var isTie: Bool { cumulativeA == cumulativeB }
 
-    func rematchSameSettings() {
-        print("🔄 Starting rematch with same players and settings")
-        // Keep players and cards, reset scores and round
-        cumulativeA = 0
-        cumulativeB = 0
-        roundScores = [:]
-        
-        // Reset player stats but keep player associations
-        for playerId in playerStats.keys {
-            playerStats[playerId] = PlayerStats(playerId: playerId)
-        }
-        
-        // Reset bonus time
-        savedBonusTime = 0
-        bonusTimePlayer = nil
-        
-        currentRound = .one
-        deck = []
-        resetDeckForRound()
-        currentTeam = settings.startingTeam
-        teamATurns = 0
-        teamBTurns = 0
-        setNextClueGiverIfNeeded()
-        stage = .roundIntro
-        Haptics.soft()
-    }
 
     func newGame() {
         print("🆕 Starting completely new game")

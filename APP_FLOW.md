@@ -238,8 +238,7 @@ Organized by feature area:
 
 * `GameEndView` shows winner or “It’s a tie!”, confetti, and:
 
-  * **Rematch (same settings)** → `store.rematchSameSettings()` → `.roundIntro`
-  * **New Game** → `store.newGame()` → `.home`
+  * **Main Menu** → `store.newGame()` → `.home`
 
 ---
 
@@ -257,7 +256,7 @@ Organized by feature area:
 .turnComplete → .recap
 .recap → (.turnHandoff | .roundEnd)
 .roundEnd → (.roundIntro | .gameEnd)
-.gameEnd → (.gameStats | .roundIntro via Rematch | .home via New Game)
+.gameEnd → (.gameStats | .home via Main Menu)
 .gameStats → .gameEnd
 ```
 

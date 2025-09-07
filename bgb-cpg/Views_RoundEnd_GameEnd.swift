@@ -135,13 +135,8 @@ struct GameEndView: View {
                     store.showGameStats()
                 }
 
-                OutlineButton(title: "Rematch (same settings)") {
-                    print("🔄 Starting rematch with current players")
-                    store.rematchSameSettings()
-                }
-
-                OutlineButton(title: "New Game") {
-                    print("🆕 Starting brand new game")
+                OutlineButton(title: "Main Menu") {
+                    print("🏠 Returning to main menu")
                     store.newGame()
                 }
             }

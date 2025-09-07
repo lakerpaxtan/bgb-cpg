@@ -9,7 +9,7 @@ A fast party charades game played in 3 rounds --- with the **same deck** each ti
 1. Tap **Start Game** → set players, starting team, timer, and card options (offline or Wikipedia content).
 2. **Pass the phone** to collect player names and each player's card picks.
 3. Play **Round 1 → Round 2 → Round 3**. Scores show between rounds.
-4. Final scoreboard + confetti. **Rematch** or **New Game**.
+4. Final scoreboard + confetti. **Main Menu** to return to home screen.
 
 ---
 
