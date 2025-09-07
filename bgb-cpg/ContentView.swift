@@ -23,6 +23,12 @@ struct ContentView: View {
             case .settings:
                 SettingsView()
                     .onAppear { print("📱 ContentView: Displaying SettingsView") }
+            case .packSelection:
+                PackSelectionView()
+                    .onAppear { print("📱 ContentView: Displaying PackSelectionView") }
+            case .customPackBuilder:
+                CustomPackBuilderView()
+                    .onAppear { print("📱 ContentView: Displaying CustomPackBuilderView") }
             case .intakeHandoff:
                 IntakeHandoffView()
                     .onAppear { print("📱 ContentView: Displaying IntakeHandoffView") }

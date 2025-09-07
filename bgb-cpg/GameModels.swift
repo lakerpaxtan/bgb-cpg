@@ -17,6 +17,7 @@ enum Team: String, Codable, CaseIterable {
 
 enum Stage {
     case home, howTo, settings
+    case packSelection, customPackBuilder
     case intakeHandoff, intakeName, intakePicks
     case roundIntro, turnHandoff, turn, turnPaused, turnSkipComplete, turnComplete, recap, roundEnd, gameEnd, gameStats
 }
@@ -82,13 +83,196 @@ struct StatsPref: Codable {
     var highlightsPerRound: Int
 }
 
-// MARK: - Content Sources
+// MARK: - Pack-Based Content System
 
-enum ContentSource: String, Codable, CaseIterable {
-    case offline = "Offline"
-    case wikipedia = "Wikipedia"
+enum Pack: String, Codable, CaseIterable, Hashable {
+    // Offline Packs
+    case offlineStandard = "offline_standard"
+    case offlineObscure = "offline_obscure"
+    case offlineCustom = "offline_custom"
+    
+    // Wikipedia Packs
+    case wikipediaStandard = "wikipedia_standard" 
+    case wikipediaObscure = "wikipedia_obscure"
+    case wikipediaScience = "wikipedia_science"
+    case wikipediaHistory = "wikipedia_history"
+    case wikipediaPop = "wikipedia_pop"
+    
+    var displayName: String {
+        switch self {
+        case .offlineStandard: return "Offline Standard"
+        case .offlineObscure: return "Offline Obscure" 
+        case .offlineCustom: return "Offline Custom"
+        case .wikipediaStandard: return "Wikipedia Standard"
+        case .wikipediaObscure: return "Wikipedia Obscure"
+        case .wikipediaScience: return "Science Deep Dive"
+        case .wikipediaHistory: return "History Buff"
+        case .wikipediaPop: return "Pop Culture"
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .offlineStandard: return "Well-known people, places, and pop culture"
+        case .offlineObscure: return "Lesser-known gems and hidden treasures"
+        case .offlineCustom: return "Build your own custom pack"
+        case .wikipediaStandard: return "Popular Wikipedia articles across all topics"
+        case .wikipediaObscure: return "Fascinating but lesser-known topics"
+        case .wikipediaScience: return "Scientific discoveries and innovations"
+        case .wikipediaHistory: return "Historical events and figures"
+        case .wikipediaPop: return "Current trends and viral topics"
+        }
+    }
+    
+    var isWikipedia: Bool {
+        switch self {
+        case .offlineStandard, .offlineObscure, .offlineCustom:
+            return false
+        case .wikipediaStandard, .wikipediaObscure, .wikipediaScience, .wikipediaHistory, .wikipediaPop:
+            return true
+        }
+    }
+    
+    var isCustom: Bool {
+        return self == .offlineCustom
+    }
+}
+
+enum Category: String, Codable, CaseIterable, Hashable {
+    // Fun Discovery Categories
+    case movies = "Movies & TV"
+    case musicVibes = "Songs & Music Vibes"
+    case internetCulture = "Internet & Meme Culture"
+    case everydayThings = "Everyday Things"
+    case scienceFun = "Science & Nature"
+    case nerdy = "Nerdy Stuff"
+    case nostalgia = "Throwback Vibes"
+    case brands = "Brands & Products"
+    case foodDrink = "Food & Flavors"
+    case randomFun = "Random & Weird"
+    case feelings = "Feelings & Experiences"
+    case technology = "Tech & Gadgets"
     
     var displayName: String { rawValue }
+}
+
+struct CustomPackFilters: Codable {
+    var categories: Set<Category>
+    var obscurityRange: ClosedRange<Int> // 1-5
+    var wordCountRange: ClosedRange<Int> // 1-10 words
+    
+    static let `default` = CustomPackFilters(
+        categories: [.movies, .musicVibes, .brands],
+        obscurityRange: 1...3,
+        wordCountRange: 1...4
+    )
+}
+
+// Pack filtering system - defines what content each pack includes
+struct PackFilters {
+    let categories: Set<Category>
+    let obscurityRange: ClosedRange<Int>
+    let wordCountRange: ClosedRange<Int>
+    let wikipediaQuery: PackWikipediaQuery?
+    
+    init(categories: Set<Category>, obscurity: ClosedRange<Int>, wordCount: ClosedRange<Int>, wikipediaQuery: PackWikipediaQuery? = nil) {
+        self.categories = categories
+        self.obscurityRange = obscurity
+        self.wordCountRange = wordCount
+        self.wikipediaQuery = wikipediaQuery
+    }
+}
+
+struct PackWikipediaQuery {
+    let categories: [String]
+    let popularityRange: ClosedRange<Int>
+    let wordLimitRange: ClosedRange<Int>
+    
+    init(categories: [String], popularity: ClosedRange<Int> = 20...80, wordLimit: ClosedRange<Int> = 1...5) {
+        self.categories = categories
+        self.popularityRange = popularity
+        self.wordLimitRange = wordLimit
+    }
+}
+
+extension Pack {
+    var filters: PackFilters {
+        switch self {
+        case .offlineStandard:
+            return PackFilters(
+                categories: [.movies, .musicVibes, .brands, .foodDrink, .everydayThings],
+                obscurity: 1...3,
+                wordCount: 1...4
+            )
+            
+        case .offlineObscure:
+            return PackFilters(
+                categories: [.nerdy, .scienceFun, .randomFun, .internetCulture],
+                obscurity: 3...5,
+                wordCount: 2...6
+            )
+            
+            
+        case .wikipediaStandard:
+            return PackFilters(
+                categories: [],
+                obscurity: 1...5,
+                wordCount: 1...5,
+                wikipediaQuery: PackWikipediaQuery(
+                    categories: ["Biography", "Geography", "Entertainment", "Science"],
+                    popularity: 40...90
+                )
+            )
+            
+        case .wikipediaObscure:
+            return PackFilters(
+                categories: [],
+                obscurity: 1...5,
+                wordCount: 1...8,
+                wikipediaQuery: PackWikipediaQuery(
+                    categories: ["History", "Philosophy", "Art", "Literature"],
+                    popularity: 5...40
+                )
+            )
+            
+        case .wikipediaScience:
+            return PackFilters(
+                categories: [],
+                obscurity: 1...5,
+                wordCount: 1...6,
+                wikipediaQuery: PackWikipediaQuery(
+                    categories: ["Science", "Technology", "Medicine", "Mathematics"],
+                    popularity: 20...80
+                )
+            )
+            
+        case .wikipediaHistory:
+            return PackFilters(
+                categories: [],
+                obscurity: 1...5,
+                wordCount: 1...8,
+                wikipediaQuery: PackWikipediaQuery(
+                    categories: ["History", "Wars", "Politics", "Ancient_history"],
+                    popularity: 15...75
+                )
+            )
+            
+        case .wikipediaPop:
+            return PackFilters(
+                categories: [],
+                obscurity: 1...5,
+                wordCount: 1...4,
+                wikipediaQuery: PackWikipediaQuery(
+                    categories: ["Entertainment", "Sports", "Internet_culture", "Pop_culture"],
+                    popularity: 60...95
+                )
+            )
+            
+        case .offlineCustom:
+            // This will use customPackFilters from Settings
+            return PackFilters(categories: [], obscurity: 1...5, wordCount: 1...10)
+        }
+    }
 }
 
 enum ContentSourceStatus: Equatable {
@@ -148,9 +332,8 @@ struct Settings: Codable {
     var timerSeconds: Int
     var titlesPerPlayer: Int
     var picksPerPlayer: Int
-    var contentSource: ContentSource
-    var filters: Filters // For offline mode
-    var wikipediaFilters: WikipediaFilters // For Wikipedia mode
+    var selectedPack: Pack
+    var customPackFilters: CustomPackFilters // Used when selectedPack is .offlineCustom
     var acceptance: Acceptance
     var stats: StatsPref
 }
@@ -210,12 +393,33 @@ struct PlayerStats: Identifiable, Codable {
 struct Card: Identifiable, Hashable, Codable {
     let id: UUID
     let title: String
-    let subject: String // Now using String instead of Subject enum
+    let categories: Set<Category>
+    let packs: Set<Pack>
+    let obscurity: Int // 1-5, where 5 is most obscure
+    let wordCount: Int
+    
+    // Legacy field for backward compatibility - will be removed eventually
+    let subject: String
 
+    init(id: UUID = UUID(), title: String, categories: Set<Category>, packs: Set<Pack>, obscurity: Int, wordCount: Int? = nil, subject: String = "") {
+        self.id = id
+        self.title = title
+        self.categories = categories
+        self.packs = packs
+        self.obscurity = obscurity
+        self.wordCount = wordCount ?? title.split(separator: " ").count
+        self.subject = subject.isEmpty ? categories.first?.displayName ?? "Unknown" : subject
+    }
+    
+    // Legacy initializer for backward compatibility
     init(id: UUID = UUID(), title: String, subject: String) {
         self.id = id
         self.title = title
         self.subject = subject
+        self.categories = []
+        self.packs = []
+        self.obscurity = 3
+        self.wordCount = title.split(separator: " ").count
     }
 }
 
@@ -250,15 +454,8 @@ extension Settings {
         timerSeconds: 60,
         titlesPerPlayer: 10,
         picksPerPlayer: 3,
-        contentSource: .offline,
-        filters: Filters(
-            subjects: [.everything]
-//            excludeYearsDates: true,
-//            excludeDisambiguation: true,
-//            excludeListsCategories: true,
-//            blockNSFW: true
-        ),
-        wikipediaFilters: .default,
+        selectedPack: .offlineStandard,
+        customPackFilters: .default,
         acceptance: Acceptance(
             ignoreLeadingArticle: true,
             leadingArticles: ["the","a","an"],

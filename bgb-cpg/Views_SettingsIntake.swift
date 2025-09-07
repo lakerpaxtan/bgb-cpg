@@ -45,42 +45,16 @@ struct SettingsView: View {
                         .font(.footnote).foregroundStyle(.secondary)
                 }
 
-                Divider().padding(.vertical, 8)
-
-                // Content Source
-                Group {
-                    Text("Content Source").font(.title3.bold())
-                    
-                    ContentSourcePicker(selected: $s.contentSource)
-                    
-                    // Show appropriate filters based on content source
-                    if s.contentSource == .offline {
-                        OfflineFilters(filters: $s.filters)
-                    } else {
-                        WikipediaFiltersView(filters: $s.wikipediaFilters, store: store)
-                    }
-                }
-
                 Text("Hint: Players add their names during the pass-around.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .padding(.top, 8)
 
-                LoadingButton(
-                    isLoading: store.loadingCandidates,
-                    normalTitle: "Next — Player Intake",
-                    loadingTitle: "Loading..."
-                ) {
-                    store.candidateLoadingError = nil // Clear any previous errors
+                BigButton(title: "Next — Choose Pack") {
                     store.settings = s
-                    store.startIntake()
-                }
-                .alert("Loading Error", isPresented: .constant(store.candidateLoadingError != nil)) {
-                    Button("OK") {
-                        store.candidateLoadingError = nil
-                    }
-                } message: {
-                    Text(store.candidateLoadingError ?? "")
+                    print("⚙️ Settings saved, proceeding to pack selection")
+                    store.stage = .packSelection
+                    print("✅ Stage changed to: .packSelection")
                 }
                 .padding(.top, 10)
             }
@@ -408,117 +382,454 @@ private struct CandidateRow: View {
     }
 }
 
+// MARK: - Pack Selection Views
 
-// MARK: - Content Source Components
-
-struct ContentSourcePicker: View {
-    @Binding var selected: ContentSource
+struct PackSelectionView: View {
+    @EnvironmentObject var store: GameStore
+    @State private var selectedPack: Pack = .offlineStandard
     
     var body: some View {
-        HStack(spacing: 8) {
-            ForEach(ContentSource.allCases, id: \.self) { source in
-                let isSelected = selected == source
-                Button {
-                    selected = source
-                    Haptics.tap()
-                } label: {
-                    Text(source.displayName)
-                        .font(.subheadline.weight(.semibold))
-                        .padding(.horizontal, 16).padding(.vertical, 8)
-                        .background(isSelected ? Color.blue.opacity(0.18) : Color.gray.opacity(0.12))
-                        .foregroundStyle(isSelected ? Color.blue : Color.secondary)
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-            }
-            Spacer()
-        }
-    }
-}
-
-
-struct OfflineFilters: View {
-    @Binding var filters: Filters
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Subjects")
-                .font(.headline)
-            SubjectsChips(selected: $filters.subjects)
-        }
-    }
-}
-
-struct WikipediaFiltersView: View {
-    @Binding var filters: WikipediaFilters
-    let store: GameStore
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if store.wikipediaService.status == .available {
-                // Categories
-                Text("Categories")
-                    .font(.headline)
-                WikipediaCategoryChips(selected: $filters.categories, availableCategories: store.wikipediaService.availableCategories)
-                
-                // Word Limit
-                Text("Word Limit: \(filters.wordLimit.lowerBound)-\(filters.wordLimit.upperBound) words")
-                    .font(.headline)
-                RangeSlider(range: $filters.wordLimit, bounds: 1...10, step: 1)
-                
-                // Popularity
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Popularity (not in use): \(filters.popularityPercentile.lowerBound)%-\(filters.popularityPercentile.upperBound)%")
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                // Header - Fixed at top with safe area
+                VStack(spacing: 16) {
+                    HStack {
+                        Button(action: {
+                            store.stage = .settings
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 16, weight: .semibold))
+                                Text("Settings")
+                                    .font(.system(size: 17))
+                            }
+                            .foregroundStyle(.blue)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Spacer()
+                        
+                        Text("Choose Pack")
+                            .font(.title.bold())
+                            .lineLimit(1)
+                        
+                        Spacer()
+                        
+                        // Invisible spacer to center the title
+                        Color.clear.frame(width: 80)
+                    }
+                    
+                    Text("Select a curated pack of titles for your game")
                         .font(.headline)
-                    Text("Filters articles by how well-known they are. 0%=obscure, 100%=widely known")
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+                .background(Color(UIColor.systemBackground))
+                
+                // Pack cards scrollview - Properly sized and padded
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 16) {
+                        ForEach(Pack.allCases, id: \.self) { pack in
+                            PackCard(
+                                pack: pack,
+                                isSelected: selectedPack == pack
+                            ) {
+                                selectedPack = pack
+                                Haptics.tap()
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 8)
+                }
+                .frame(height: 200)
+                
+                // Content area - scrollable
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Selected pack info
+                        VStack(spacing: 8) {
+                            Text(selectedPack.displayName)
+                                .font(.title2.bold())
+                                .foregroundStyle(.primary)
+                            
+                            Text(selectedPack.description)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 16)
+                        }
+                        .padding(.vertical, 16)
+                        .background(Color.black.opacity(0.03))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        
+                        Spacer(minLength: 40)
+                        
+                        // Show loading error if any
+                        if let error = store.candidateLoadingError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color.orange.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        
+                        // Action buttons
+                        VStack(spacing: 12) {
+                            if selectedPack == .offlineCustom {
+                                BigButton(title: "Customize Your Pack") {
+                                    var settings = store.settings
+                                    settings.selectedPack = selectedPack
+                                    store.settings = settings
+                                    print("📦 Selected pack: \(selectedPack.displayName)")
+                                    store.stage = .customPackBuilder
+                                    print("✅ Stage changed to: .customPackBuilder")
+                                }
+                            } else {
+                                BigButton(title: "Continue to Player Setup") {
+                                    var settings = store.settings
+                                    settings.selectedPack = selectedPack
+                                    store.settings = settings
+                                    print("📦 Selected pack: \(selectedPack.displayName)")
+                                    store.startIntakeWithPack(selectedPack)
+                                }
+                            }
+                            
+                            RestartButton()
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 20)
+                }
+            }
+        }
+        .onAppear {
+            selectedPack = store.settings.selectedPack
+        }
+    }
+}
+
+struct PackCard: View {
+    let pack: Pack
+    let isSelected: Bool
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 12) {
+                // Pack type indicator
+                HStack {
+                    Circle()
+                        .fill(pack.isWikipedia ? Color.orange : Color.blue)
+                        .frame(width: 8, height: 8)
+                    Text(pack.isWikipedia ? "Wikipedia" : "Offline")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(pack.isWikipedia ? .orange : .blue)
+                    Spacer()
+                    if pack.isCustom {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(pack.displayName)
+                        .font(.headline.bold())
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                    
+                    Text(pack.description)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(3)
                 }
-                RangeSlider(range: $filters.popularityPercentile, bounds: 0...100, step: 5)
                 
-                // Creation Years
-                Text("Created (not in use): \(filters.createdYears.lowerBound)-\(filters.createdYears.upperBound)")
-                    .font(.headline)
-                RangeSlider(range: $filters.createdYears, bounds: 2001...2025, step: 1)
+                Spacer()
                 
-                // Update Years
-                Text("Updated (not in use): \(filters.updatedYears.lowerBound)-\(filters.updatedYears.upperBound)")
-                    .font(.headline)
-                RangeSlider(range: $filters.updatedYears, bounds: 2020...2025, step: 1)
-            } else {
-                Text("Wikipedia filters will appear when Wikipedia is available")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .italic()
+                // Sample titles preview (if available)
+                if !pack.isWikipedia && !pack.isCustom {
+                    let sampleTitles = TitleBank.titlesForPack(pack).prefix(3)
+                    if !sampleTitles.isEmpty {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Sample titles:")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                            ForEach(Array(sampleTitles.enumerated()), id: \.offset) { _, card in
+                                Text("• \(card.title)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
+                }
             }
+            .padding(16)
+            .frame(width: 220, height: 200)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white)
+                    .shadow(
+                        color: isSelected ? Color.blue.opacity(0.3) : Color.black.opacity(0.08),
+                        radius: isSelected ? 12 : 8,
+                        y: isSelected ? 6 : 4
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(
+                                isSelected ? Color.blue : Color.clear,
+                                lineWidth: isSelected ? 2 : 0
+                            )
+                    )
+            )
+            .scaleEffect(isSelected ? 1.02 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Custom Pack Builder
+
+struct CustomPackBuilderView: View {
+    @EnvironmentObject var store: GameStore
+    @State private var customFilters: CustomPackFilters = .default
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Header
+            HStack {
+                Button(action: {
+                    store.stage = .packSelection
+                    print("✅ Stage changed to: .packSelection")
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Back")
+                            .font(.system(size: 17))
+                    }
+                    .foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
+                
+                Spacer()
+                
+                Text("Custom Pack")
+                    .font(.largeTitle.bold())
+                
+                Spacer()
+                
+                Color.clear.frame(width: 60)
+            }
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Categories Selection
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Categories")
+                            .font(.title3.bold())
+                        
+                        Text("Select which types of titles to include")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        
+                        CategoryChips(selected: $customFilters.categories)
+                    }
+                    
+                    Divider()
+                    
+                    // Obscurity Range
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Difficulty Level")
+                            .font(.title3.bold())
+                        
+                        Text("1 = Very well-known, 5 = Very obscure")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("Min: \(customFilters.obscurityRange.lowerBound)")
+                                    .font(.subheadline.weight(.semibold))
+                                Slider(
+                                    value: Binding(
+                                        get: { Double(customFilters.obscurityRange.lowerBound) },
+                                        set: { newValue in
+                                            let intValue = Int(newValue)
+                                            let upperBound = customFilters.obscurityRange.upperBound
+                                            customFilters.obscurityRange = intValue...max(intValue, upperBound)
+                                        }
+                                    ),
+                                    in: 1...5,
+                                    step: 1
+                                )
+                            }
+                            
+                            Spacer().frame(width: 20)
+                            
+                            VStack(alignment: .leading) {
+                                Text("Max: \(customFilters.obscurityRange.upperBound)")
+                                    .font(.subheadline.weight(.semibold))
+                                Slider(
+                                    value: Binding(
+                                        get: { Double(customFilters.obscurityRange.upperBound) },
+                                        set: { newValue in
+                                            let intValue = Int(newValue)
+                                            let lowerBound = customFilters.obscurityRange.lowerBound
+                                            customFilters.obscurityRange = min(lowerBound, intValue)...intValue
+                                        }
+                                    ),
+                                    in: 1...5,
+                                    step: 1
+                                )
+                            }
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    // Word Count Range
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Phrase Length")
+                            .font(.title3.bold())
+                        
+                        Text("Number of words in each title")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("Min: \(customFilters.wordCountRange.lowerBound)")
+                                    .font(.subheadline.weight(.semibold))
+                                Slider(
+                                    value: Binding(
+                                        get: { Double(customFilters.wordCountRange.lowerBound) },
+                                        set: { newValue in
+                                            let intValue = Int(newValue)
+                                            let upperBound = customFilters.wordCountRange.upperBound
+                                            customFilters.wordCountRange = intValue...max(intValue, upperBound)
+                                        }
+                                    ),
+                                    in: 1...10,
+                                    step: 1
+                                )
+                            }
+                            
+                            Spacer().frame(width: 20)
+                            
+                            VStack(alignment: .leading) {
+                                Text("Max: \(customFilters.wordCountRange.upperBound)")
+                                    .font(.subheadline.weight(.semibold))
+                                Slider(
+                                    value: Binding(
+                                        get: { Double(customFilters.wordCountRange.upperBound) },
+                                        set: { newValue in
+                                            let intValue = Int(newValue)
+                                            let lowerBound = customFilters.wordCountRange.lowerBound
+                                            customFilters.wordCountRange = min(lowerBound, intValue)...intValue
+                                        }
+                                    ),
+                                    in: 1...10,
+                                    step: 1
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Preview
+                    let previewTitles = TitleBank.titlesForPack(.offlineCustom, customFilters: customFilters)
+                    if !previewTitles.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Preview (\(previewTitles.count) titles available)")
+                                .font(.headline)
+                            
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 8) {
+                                ForEach(Array(previewTitles.prefix(6).enumerated()), id: \.offset) { _, card in
+                                    Text(card.title)
+                                        .font(.caption)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color.black.opacity(0.05))
+                                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                                        .lineLimit(1)
+                                }
+                            }
+                            
+                            if previewTitles.count > 6 {
+                                Text("...and \(previewTitles.count - 6) more")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.top, 8)
+                    } else {
+                        Text("No titles match your current filters. Try adjusting your selection.")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .padding(.vertical, 8)
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            // Action buttons
+            VStack(spacing: 12) {
+                let hasValidTitles = !TitleBank.titlesForPack(.offlineCustom, customFilters: customFilters).isEmpty
+                
+                BigButton(title: hasValidTitles ? "Use Custom Pack" : "Adjust Filters") {
+                    if hasValidTitles {
+                        var settings = store.settings
+                        settings.selectedPack = .offlineCustom
+                        settings.customPackFilters = customFilters
+                        store.settings = settings
+                        print("📦 Custom pack configured with \(TitleBank.titlesForPack(.offlineCustom, customFilters: customFilters).count) titles")
+                        store.startIntakeWithCustomPack(customFilters)
+                    }
+                }
+                .disabled(!hasValidTitles)
+                
+                RestartButton()
+            }
+        }
+        .padding(24)
+        .onAppear {
+            customFilters = store.settings.customPackFilters
         }
     }
 }
 
-struct WikipediaCategoryChips: View {
-    @Binding var selected: Set<WikipediaCategory>
-    let availableCategories: [WikipediaCategory]
-    
+struct CategoryChips: View {
+    @Binding var selected: Set<Category>
+
     var body: some View {
         FlowLayout {
-            ForEach(availableCategories, id: \.self) { category in
-                let isSelected = selected.contains(category)
+            ForEach(Category.allCases, id: \.self) { category in
+                let isOn = selected.contains(category)
                 Button {
-                    if isSelected {
+                    if isOn {
                         selected.remove(category)
                     } else {
                         selected.insert(category)
                     }
-                    if selected.isEmpty && !availableCategories.isEmpty {
-                        selected = [availableCategories.first!] // Default to at least one
+                    // Ensure at least one category is selected
+                    if selected.isEmpty {
+                        selected = [.movies]
                     }
                     Haptics.tap()
                 } label: {
                     Text(category.displayName)
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8).padding(.vertical, 4)
-                        .background(isSelected ? Color.blue.opacity(0.18) : Color.gray.opacity(0.12))
-                        .foregroundStyle(isSelected ? Color.blue : Color.secondary)
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(isOn ? Color.blue.opacity(0.18) : Color.gray.opacity(0.12))
+                        .foregroundStyle(isOn ? Color.blue : Color.secondary)
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -527,78 +838,3 @@ struct WikipediaCategoryChips: View {
     }
 }
 
-struct RangeSlider: View {
-    @Binding var range: ClosedRange<Int>
-    let bounds: ClosedRange<Int>
-    let step: Int
-    
-    @State private var lowerValue: Double
-    @State private var upperValue: Double
-    
-    init(range: Binding<ClosedRange<Int>>, bounds: ClosedRange<Int>, step: Int) {
-        self._range = range
-        self.bounds = bounds
-        self.step = step
-        self._lowerValue = State(initialValue: Double(range.wrappedValue.lowerBound))
-        self._upperValue = State(initialValue: Double(range.wrappedValue.upperBound))
-    }
-    
-    var body: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Text("\(bounds.lowerBound)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text("\(bounds.upperBound)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            
-            VStack(spacing: 8) {
-                HStack {
-                    Text("Min: \(Int(lowerValue))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                }
-                
-                Slider(value: $lowerValue, 
-                       in: Double(bounds.lowerBound)...Double(bounds.upperBound),
-                       step: Double(step)) { _ in
-                    // Ensure lower doesn't exceed upper
-                    if lowerValue > upperValue {
-                        upperValue = lowerValue
-                    }
-                    updateRange()
-                }
-                .accentColor(.blue)
-                
-                HStack {
-                    Text("Max: \(Int(upperValue))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                }
-                
-                Slider(value: $upperValue,
-                       in: Double(bounds.lowerBound)...Double(bounds.upperBound),
-                       step: Double(step)) { _ in
-                    // Ensure upper doesn't go below lower
-                    if upperValue < lowerValue {
-                        lowerValue = upperValue
-                    }
-                    updateRange()
-                }
-                .accentColor(.blue)
-            }
-        }
-    }
-    
-    private func updateRange() {
-        let newRange = Int(lowerValue)...Int(upperValue)
-        if range != newRange {
-            range = newRange
-        }
-    }
-}

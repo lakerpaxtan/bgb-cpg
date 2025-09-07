@@ -43,9 +43,9 @@
 # Outstanding Problems
 # (do not cross off problems without checking with me first)
 
-1. Remove rematch functionality entirely and rename "New Game" to "Main Menu" - eliminate all rematch-related code and flows, update button text and functionality to simply return to main menu **[In Progress, Please Test]**
+1. Redesign content selection as curated packs system - remove content source from settings, create new pack selection view with cards (Offline Standard/Obscure, Wikipedia Standard/Obscure, etc.), add custom pack builder, expand title database to 2000+ titles with packs/categories/obscurity attributes **[In Progress, Please Test]**
 ---
 
 # Completed Problems
 
-*All completed problems have been cleared to keep the file focused on current work.*
+1. Remove rematch functionality entirely and rename "New Game" to "Main Menu" - eliminated all rematch-related code and flows, updated button text and functionality to simply return to main menu
