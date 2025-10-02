@@ -48,6 +48,8 @@ Entry → App State → Stage-driven Views → Actions update GameStore → Stag
     * `.home` → `HomeView`
     * `.howTo` → `HowToView`
     * `.settings` → `SettingsView`
+    * `.packSelection` → `PackSelectionView`
+    * `.customPackBuilder` → `CustomPackBuilderView`
     * `.intakeHandoff` → `IntakeHandoffView`
     * `.intakeName` → `IntakeNameView`
     * `.intakePicks` → `IntakePicksView`
@@ -248,6 +250,10 @@ Organized by feature area:
 .home
   → .howTo | .settings
 .settings
+  → .packSelection | .intakeHandoff (legacy direct path)
+.packSelection
+  → .customPackBuilder (if custom pack selected) | .intakeHandoff
+.customPackBuilder
   → .intakeHandoff
 .intakeHandoff → .intakeName → .intakePicks → (repeat) … → .roundIntro
 .roundIntro → .turnHandoff → .turn → (.turnPaused | .turnSkipComplete | .turnComplete)

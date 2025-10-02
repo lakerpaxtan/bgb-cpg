@@ -5,64 +5,67 @@ struct SettingsView: View {
     @State private var s: Settings = .default
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                
-                HStack {
-                    Button(action: {
-                        store.goHome(resetAll: false)
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .semibold))
-                            Text("Back")
-                                .font(.system(size: 17))
-                        }
-                        .foregroundStyle(.blue)
+        VStack(spacing: 0) {
+            // Header - Top aligned
+            Text("Settings")
+                .font(.title.bold())
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, 24)
+                .padding(.top, 24)
+                .padding(.bottom, 24)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Gameplay
+                    Group {
+                        Text("Gameplay").font(.title3.bold())
+                        Stepper("Players: \(s.players)", value: $s.players, in: 4...20)
+                        Stepper("Turn timer: \(s.timerSeconds)s", value: $s.timerSeconds, in: 30...120, step: 5)
+                        Stepper("Candidates per player: \(s.titlesPerPlayer)", value: $s.titlesPerPlayer, in: 6...15)
+                        Stepper("Picks per player: \(s.picksPerPlayer)", value: $s.picksPerPlayer, in: 2...5)
+                        Text("Skips handled by round rules.")
+                            .font(.footnote).foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
-                    
-                    Spacer()
-                    
-                    Text("Settings")
-                        .font(.largeTitle.bold())
-                    
-                    Spacer()
-                    
-                    // Invisible spacer to center the title
-                    Color.clear
-                        .frame(width: 60)
+
+                    Text("Hint: Players add their names during the pass-around.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 8)
                 }
+                .padding(24)
+            }
 
-                // Gameplay
-                Group {
-                    Text("Gameplay").font(.title3.bold())
-                    Stepper("Players: \(s.players)", value: $s.players, in: 4...20)
-                    Stepper("Turn timer: \(s.timerSeconds)s", value: $s.timerSeconds, in: 30...120, step: 5)
-                    Stepper("Candidates per player: \(s.titlesPerPlayer)", value: $s.titlesPerPlayer, in: 6...15)
-                    Stepper("Picks per player: \(s.picksPerPlayer)", value: $s.picksPerPlayer, in: 2...5)
-                    Text("Skips handled by round rules.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                }
-
-                Text("Hint: Players add their names during the pass-around.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 8)
-
+            // Action buttons - Fixed at bottom
+            VStack(spacing: 12) {
                 BigButton(title: "Next — Choose Pack") {
                     store.settings = s
                     print("⚙️ Settings saved, proceeding to pack selection")
                     store.stage = .packSelection
                     print("✅ Stage changed to: .packSelection")
                 }
-                .padding(.top, 10)
+
+                // Back button
+                Button(action: {
+                    store.goHome(resetAll: false)
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Back to Home")
+                            .font(.system(size: 17))
+                    }
+                    .foregroundStyle(.blue)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
             }
-            .padding(24)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
         }
         .onAppear { s = store.settings }
     }
-    
+
 }
 
 struct LoadingButton: View {
@@ -134,6 +137,7 @@ struct IntakeHandoffView: View {
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
+
             Text("Pass-Around")
                 .font(.title.bold())
 
@@ -144,9 +148,9 @@ struct IntakeHandoffView: View {
             BigButton(title: "I'm next") {
                 store.intakeProceed()
             }
-            
+
             RestartButton()
-            
+
             Spacer()
         }
         .padding(24)
@@ -389,123 +393,100 @@ struct PackSelectionView: View {
     @State private var selectedPack: Pack = .offlineStandard
     
     var body: some View {
-        GeometryReader { geometry in
-            VStack(spacing: 0) {
-                // Header - Fixed at top with safe area
-                VStack(spacing: 16) {
-                    HStack {
-                        Button(action: {
-                            store.stage = .settings
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 16, weight: .semibold))
-                                Text("Settings")
-                                    .font(.system(size: 17))
-                            }
-                            .foregroundStyle(.blue)
+        VStack(spacing: 0) {
+            // Header - Top aligned
+            VStack(spacing: 24) {
+                Text("Choose Pack")
+                    .font(.title.bold())
+                    .frame(maxWidth: .infinity, alignment: .center)
+
+                Text("Select a curated pack of titles for your game")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+            .padding(.bottom, 16)
+
+            // Pack cards scrollview - No background color
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 16) {
+                    ForEach(Pack.allCases, id: \.self) { pack in
+                        PackCard(
+                            pack: pack,
+                            isSelected: selectedPack == pack
+                        ) {
+                            selectedPack = pack
+                            Haptics.tap()
                         }
-                        .buttonStyle(.plain)
-                        
-                        Spacer()
-                        
-                        Text("Choose Pack")
-                            .font(.title.bold())
-                            .lineLimit(1)
-                        
-                        Spacer()
-                        
-                        // Invisible spacer to center the title
-                        Color.clear.frame(width: 80)
                     }
-                    
-                    Text("Select a curated pack of titles for your game")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 8)
-                .background(Color(UIColor.systemBackground))
-                
-                // Pack cards scrollview - Properly sized and padded
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: 16) {
-                        ForEach(Pack.allCases, id: \.self) { pack in
-                            PackCard(
-                                pack: pack,
-                                isSelected: selectedPack == pack
-                            ) {
-                                selectedPack = pack
-                                Haptics.tap()
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 8)
-                }
-                .frame(height: 200)
-                
-                // Content area - scrollable
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // Selected pack info
-                        VStack(spacing: 8) {
-                            Text(selectedPack.displayName)
-                                .font(.title2.bold())
-                                .foregroundStyle(.primary)
-                            
-                            Text(selectedPack.description)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 16)
-                        }
-                        .padding(.vertical, 16)
-                        .background(Color.black.opacity(0.03))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        
-                        Spacer(minLength: 40)
-                        
-                        // Show loading error if any
-                        if let error = store.candidateLoadingError {
-                            Text(error)
-                                .font(.caption)
-                                .foregroundStyle(.orange)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Color.orange.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        
-                        // Action buttons
-                        VStack(spacing: 12) {
-                            if selectedPack == .offlineCustom {
-                                BigButton(title: "Customize Your Pack") {
-                                    var settings = store.settings
-                                    settings.selectedPack = selectedPack
-                                    store.settings = settings
-                                    print("📦 Selected pack: \(selectedPack.displayName)")
-                                    store.stage = .customPackBuilder
-                                    print("✅ Stage changed to: .customPackBuilder")
-                                }
-                            } else {
-                                BigButton(title: "Continue to Player Setup") {
-                                    var settings = store.settings
-                                    settings.selectedPack = selectedPack
-                                    store.settings = settings
-                                    print("📦 Selected pack: \(selectedPack.displayName)")
-                                    store.startIntakeWithPack(selectedPack)
-                                }
-                            }
-                            
-                            RestartButton()
-                        }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 20)
-                }
+                .padding(.vertical, 24)
             }
+            .frame(height: 250)
+
+            // Selected pack info - Fixed position
+            VStack(spacing: 8) {
+                Text(selectedPack.displayName)
+                    .font(.title2.bold())
+                    .foregroundStyle(.primary)
+
+                Text(selectedPack.description)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+            }
+            .padding(.vertical, 16)
+            .padding(.horizontal, 24)
+            .background(Color.black.opacity(0.03))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .padding(.horizontal, 24)
+            .frame(height: 100)
+
+            Spacer()
+
+            // Action buttons - Fixed at bottom
+            VStack(spacing: 12) {
+                if selectedPack == .offlineCustom {
+                    BigButton(title: "Customize Your Pack") {
+                        var settings = store.settings
+                        settings.selectedPack = selectedPack
+                        store.settings = settings
+                        print("📦 Selected pack: \(selectedPack.displayName)")
+                        store.stage = .customPackBuilder
+                        print("✅ Stage changed to: .customPackBuilder")
+                    }
+                } else {
+                    BigButton(title: "Continue to Player Setup") {
+                        var settings = store.settings
+                        settings.selectedPack = selectedPack
+                        store.settings = settings
+                        print("📦 Selected pack: \(selectedPack.displayName)")
+                        store.startIntakeWithPack(selectedPack)
+                    }
+                }
+
+                // Back to settings button
+                Button(action: {
+                    store.stage = .settings
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Back to Settings")
+                            .font(.system(size: 17))
+                    }
+                    .foregroundStyle(.blue)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
         }
         .onAppear {
             selectedPack = store.settings.selectedPack
@@ -600,35 +581,19 @@ struct PackCard: View {
 struct CustomPackBuilderView: View {
     @EnvironmentObject var store: GameStore
     @State private var customFilters: CustomPackFilters = .default
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // Header
-            HStack {
-                Button(action: {
-                    store.stage = .packSelection
-                    print("✅ Stage changed to: .packSelection")
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text("Back")
-                            .font(.system(size: 17))
-                    }
-                    .foregroundStyle(.blue)
-                }
-                .buttonStyle(.plain)
-                
-                Spacer()
-                
+        VStack(spacing: 0) {
+            // Header - Top aligned
+            VStack(spacing: 24) {
                 Text("Custom Pack")
-                    .font(.largeTitle.bold())
-                
-                Spacer()
-                
-                Color.clear.frame(width: 60)
+                    .font(.title.bold())
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
-            
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+            .padding(.bottom, 32)
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     // Categories Selection
@@ -776,14 +741,31 @@ struct CustomPackBuilderView: View {
                             .padding(.vertical, 8)
                     }
                 }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
             }
-            
-            Spacer()
-            
-            // Action buttons
+
+            // Error display area - Fixed height so it doesn't push buttons
+            VStack {
+                if let error = store.candidateLoadingError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.orange.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .transition(.opacity)
+                }
+            }
+            .frame(height: 60)
+            .padding(.horizontal, 24)
+            .animation(.easeInOut(duration: 0.2), value: store.candidateLoadingError != nil)
+
+            // Action buttons - Fixed at bottom
             VStack(spacing: 12) {
                 let hasValidTitles = !TitleBank.titlesForPack(.offlineCustom, customFilters: customFilters).isEmpty
-                
+
                 BigButton(title: hasValidTitles ? "Use Custom Pack" : "Adjust Filters") {
                     if hasValidTitles {
                         var settings = store.settings
@@ -795,13 +777,30 @@ struct CustomPackBuilderView: View {
                     }
                 }
                 .disabled(!hasValidTitles)
-                
-                RestartButton()
+
+                // Back button
+                Button(action: {
+                    store.stage = .packSelection
+                    print("✅ Stage changed to: .packSelection")
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Back to Pack Selection")
+                            .font(.system(size: 17))
+                    }
+                    .foregroundStyle(.blue)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
             }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
         }
-        .padding(24)
         .onAppear {
             customFilters = store.settings.customPackFilters
+            store.candidateLoadingError = nil // Clear any previous errors
         }
     }
 }

@@ -301,42 +301,7 @@ final class GameStore: ObservableObject {
         loadingCandidates = false
     }
     
-    // Legacy function - will be removed eventually
-    private func preloadTitles() {
-        print("📦 GameStore.preloadTitles() - starting title preloading")
-        Task {
-            await preloadTitlesAsync()
-        }
-    }
-    
-    @MainActor
-    private func preloadTitlesAsync() async {
-        loadingCandidates = true
-        candidateLoadingError = nil
-        sharedWikipediaTitles = []
-        
-        let totalNeeded = settings.players * settings.titlesPerPlayer
-        print("📊 GameStore.preloadTitlesAsync() - need \(totalNeeded) total titles")
-        
-        if settings.selectedPack.isWikipedia {
-            print("🌐 Using Wikipedia pack: \(settings.selectedPack.displayName)")
-            await preloadWikipediaTitlesAsync(totalNeeded: totalNeeded)
-        } else {
-            print("💾 Using offline pack: \(settings.selectedPack.displayName)")
-            preloadOfflineTitles(totalNeeded: totalNeeded)
-        }
-        
-        loadingCandidates = false
-        print("✅ Title preloading complete")
-        
-        // Move to intake handoff when loading is complete and no errors
-        if candidateLoadingError == nil {
-            stage = .intakeHandoff
-            print("✅ Stage changed to: .intakeHandoff")
-        } else {
-            print("❌ Staying on settings due to loading error")
-        }
-    }
+    // DELETED: preloadTitles() - unused legacy function replaced by pack-specific preload methods
 
     // Next handoff prompt during intake
     func intakeProceed() {

@@ -28,23 +28,3 @@ Let's also remember to put logs that explain the logical flow of the code to any
 
 
 ## Key Learnings & Development Insights
-
-### SwiftUI Touch & UI Patterns
-- Use `Color.white.opacity(0.001)` for invisible but tappable areas, not `Color.clear`
-- Modifier order matters: padding after background creates visual borders, padding before affects the background
-- Fixed button sizing prevents layout shifts when dynamic content changes
-
-### State Management & Timing
-- Timer logic needs both `turnActive` AND `!turnPaused` checks for proper pause handling 
-- Skip logic requires count-based detection: `skipCount + correctCount ≥ initialDeckSize && skipCount > 0`
-- Bonus time system: check for bonus player first before normal team rotation
-
-### User Experience Design
-- Validation errors should only appear after user interaction begins (e.g., after typing starts)
-- Information hierarchy is crucial: primary actions prominent, diagnostic info clearly secondary
-- Turn completion notifications should explain different end scenarios clearly
-
-### Game Flow Management
-- Mid-game settings changes should affect future rounds, not current gameplay
-- Turn end detection should trigger immediately, not just lock further actions
-- Remove obsolete logic entirely when changing flow to avoid confusing UI states

@@ -52,9 +52,10 @@ enum RoundPhase: Int, Codable {
     }
 }
 
-struct Filters: Codable {
-    var subjects: Set<Subject>
-}
+// struct Filters: Codable {
+//     var subjects: Set<Subject>
+// }
+// DELETED: Unused - replaced by PackFilters system
 
 enum Subject: String, Codable, CaseIterable, Hashable {
     case people = "People"
@@ -90,37 +91,37 @@ enum Pack: String, Codable, CaseIterable, Hashable {
     case offlineStandard = "offline_standard"
     case offlineObscure = "offline_obscure"
     case offlineCustom = "offline_custom"
-    
-    // Wikipedia Packs
-    case wikipediaStandard = "wikipedia_standard" 
-    case wikipediaObscure = "wikipedia_obscure"
-    case wikipediaScience = "wikipedia_science"
-    case wikipediaHistory = "wikipedia_history"
-    case wikipediaPop = "wikipedia_pop"
+
+    // Wikipedia Packs - TEMPORARILY COMMENTED OUT
+    // case wikipediaStandard = "wikipedia_standard"
+    // case wikipediaObscure = "wikipedia_obscure"
+    // case wikipediaScience = "wikipedia_science"
+    // case wikipediaHistory = "wikipedia_history"
+    // case wikipediaPop = "wikipedia_pop"
     
     var displayName: String {
         switch self {
-        case .offlineStandard: return "Offline Standard"
-        case .offlineObscure: return "Offline Obscure" 
-        case .offlineCustom: return "Offline Custom"
-        case .wikipediaStandard: return "Wikipedia Standard"
-        case .wikipediaObscure: return "Wikipedia Obscure"
-        case .wikipediaScience: return "Science Deep Dive"
-        case .wikipediaHistory: return "History Buff"
-        case .wikipediaPop: return "Pop Culture"
+        case .offlineStandard: return "Standard"
+        case .offlineObscure: return "Obscure"
+        case .offlineCustom: return "Custom"
+        // case .wikipediaStandard: return "Wikipedia Standard"
+        // case .wikipediaObscure: return "Wikipedia Obscure"
+        // case .wikipediaScience: return "Science Deep Dive"
+        // case .wikipediaHistory: return "History Buff"
+        // case .wikipediaPop: return "Pop Culture"
         }
     }
     
     var description: String {
         switch self {
-        case .offlineStandard: return "Well-known people, places, and pop culture"
-        case .offlineObscure: return "Lesser-known gems and hidden treasures"
-        case .offlineCustom: return "Build your own custom pack"
-        case .wikipediaStandard: return "Popular Wikipedia articles across all topics"
-        case .wikipediaObscure: return "Fascinating but lesser-known topics"
-        case .wikipediaScience: return "Scientific discoveries and innovations"
-        case .wikipediaHistory: return "Historical events and figures"
-        case .wikipediaPop: return "Current trends and viral topics"
+        case .offlineStandard: return "Familiar idioms, movies, food, and everyday phrases"
+        case .offlineObscure: return "Science facts, internet culture, and mind-bending concepts"
+        case .offlineCustom: return "Build your own pack with custom filters"
+        // case .wikipediaStandard: return "Popular Wikipedia articles across all topics"
+        // case .wikipediaObscure: return "Fascinating but lesser-known topics"
+        // case .wikipediaScience: return "Scientific discoveries and innovations"
+        // case .wikipediaHistory: return "Historical events and figures"
+        // case .wikipediaPop: return "Current trends and viral topics"
         }
     }
     
@@ -128,8 +129,8 @@ enum Pack: String, Codable, CaseIterable, Hashable {
         switch self {
         case .offlineStandard, .offlineObscure, .offlineCustom:
             return false
-        case .wikipediaStandard, .wikipediaObscure, .wikipediaScience, .wikipediaHistory, .wikipediaPop:
-            return true
+        // case .wikipediaStandard, .wikipediaObscure, .wikipediaScience, .wikipediaHistory, .wikipediaPop:
+        //     return true
         }
     }
     
@@ -211,63 +212,63 @@ extension Pack {
                 obscurity: 3...5,
                 wordCount: 2...6
             )
-            
-            
-        case .wikipediaStandard:
-            return PackFilters(
-                categories: [],
-                obscurity: 1...5,
-                wordCount: 1...5,
-                wikipediaQuery: PackWikipediaQuery(
-                    categories: ["Biography", "Geography", "Entertainment", "Science"],
-                    popularity: 40...90
-                )
-            )
-            
-        case .wikipediaObscure:
-            return PackFilters(
-                categories: [],
-                obscurity: 1...5,
-                wordCount: 1...8,
-                wikipediaQuery: PackWikipediaQuery(
-                    categories: ["History", "Philosophy", "Art", "Literature"],
-                    popularity: 5...40
-                )
-            )
-            
-        case .wikipediaScience:
-            return PackFilters(
-                categories: [],
-                obscurity: 1...5,
-                wordCount: 1...6,
-                wikipediaQuery: PackWikipediaQuery(
-                    categories: ["Science", "Technology", "Medicine", "Mathematics"],
-                    popularity: 20...80
-                )
-            )
-            
-        case .wikipediaHistory:
-            return PackFilters(
-                categories: [],
-                obscurity: 1...5,
-                wordCount: 1...8,
-                wikipediaQuery: PackWikipediaQuery(
-                    categories: ["History", "Wars", "Politics", "Ancient_history"],
-                    popularity: 15...75
-                )
-            )
-            
-        case .wikipediaPop:
-            return PackFilters(
-                categories: [],
-                obscurity: 1...5,
-                wordCount: 1...4,
-                wikipediaQuery: PackWikipediaQuery(
-                    categories: ["Entertainment", "Sports", "Internet_culture", "Pop_culture"],
-                    popularity: 60...95
-                )
-            )
-            
+
+        // WIKIPEDIA PACKS - TEMPORARILY COMMENTED OUT
+        // case .wikipediaStandard:
+        //     return PackFilters(
+        //         categories: [],
+        //         obscurity: 1...5,
+        //         wordCount: 1...5,
+        //         wikipediaQuery: PackWikipediaQuery(
+        //             categories: ["Biography", "Geography", "Entertainment", "Science"],
+        //             popularity: 40...90
+        //         )
+        //     )
+        //
+        // case .wikipediaObscure:
+        //     return PackFilters(
+        //         categories: [],
+        //         obscurity: 1...5,
+        //         wordCount: 1...8,
+        //         wikipediaQuery: PackWikipediaQuery(
+        //             categories: ["History", "Philosophy", "Art", "Literature"],
+        //             popularity: 5...40
+        //         )
+        //     )
+        //
+        // case .wikipediaScience:
+        //     return PackFilters(
+        //         categories: [],
+        //         obscurity: 1...5,
+        //         wordCount: 1...6,
+        //         wikipediaQuery: PackWikipediaQuery(
+        //             categories: ["Science", "Technology", "Medicine", "Mathematics"],
+        //             popularity: 20...80
+        //         )
+        //     )
+        //
+        // case .wikipediaHistory:
+        //     return PackFilters(
+        //         categories: [],
+        //         obscurity: 1...5,
+        //         wordCount: 1...8,
+        //         wikipediaQuery: PackWikipediaQuery(
+        //             categories: ["History", "Wars", "Politics", "Ancient_history"],
+        //             popularity: 15...75
+        //         )
+        //     )
+        //
+        // case .wikipediaPop:
+        //     return PackFilters(
+        //         categories: [],
+        //         obscurity: 1...5,
+        //         wordCount: 1...4,
+        //         wikipediaQuery: PackWikipediaQuery(
+        //             categories: ["Entertainment", "Sports", "Internet_culture", "Pop_culture"],
+        //             popularity: 60...95
+        //         )
+        //     )
+
         case .offlineCustom:
             // This will use customPackFilters from Settings
             return PackFilters(categories: [], obscurity: 1...5, wordCount: 1...10)

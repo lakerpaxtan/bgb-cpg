@@ -72,10 +72,28 @@ Skips: **Allowed** until you've processed all cards available at turn start, the
 
 ---
 
-## Content Sources
+## Content Sources & Packs
 
-* **Offline Mode**: Uses curated title pools by subject (People, Places, Film/TV, etc.) — works without internet.
-* **Wikipedia Mode**: Fetches live articles from Wikipedia categories with customizable filters. Falls back to offline mode if Wikipedia is unavailable.
+The app offers **3 curated content packs** (Wikipedia packs temporarily disabled):
+
+### **Standard** (499 titles)
+Familiar idioms, movies, food, and everyday phrases. Great for casual play.
+- Categories: Movies & TV, Music, Brands, Food, Everyday Things
+- Difficulty: Easy to Medium (obscurity 1-3)
+- Length: Short titles (1-4 words)
+- Examples: "The Matrix", "Avocado toast", "Elephant in the room"
+
+### **Obscure** (75+ titles)
+Science facts, internet culture, and mind-bending concepts. For those who want a challenge.
+- Categories: Nerdy Stuff, Science & Nature, Random Facts, Internet Culture
+- Difficulty: Medium to Hard (obscurity 3-5)
+- Length: Longer titles (2-6 words)
+- Examples: "Schrödinger's cat", "Trolley problem", "Mandela effect"
+
+### **Custom**
+Build your own pack with custom filters! Select from 12 categories, set obscurity (1-5), and word count (1-10).
+- Perfect for themed game nights or specific interests
+- Filters the full 500+ title database based on your preferences
 
 ## Player Intake
 
