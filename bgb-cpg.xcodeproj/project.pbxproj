@@ -8,48 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		CC5459A42E4AE5BA00B8CFA2 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = CC5459A32E4AE5B400B8CFA2 /* README.md */; };
-		CC5459A62E4AE60400B8CFA2 /* APP_FLOW.md in Resources */ = {isa = PBXBuildFile; fileRef = CC5459A52E4AE5F800B8CFA2 /* APP_FLOW.md */; };
+		CCF2CC792F0345F6007DD982 /* AGENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = CCF2CC782F0345F6007DD982 /* AGENTS.md */; };
+		CCF2CC7B2F034602007DD982 /* OutstandingProblems.md in Resources */ = {isa = PBXBuildFile; fileRef = CCF2CC7A2F034602007DD982 /* OutstandingProblems.md */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		CC54596C2E4AD57D00B8CFA2 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = CC5459552E4AD57C00B8CFA2 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = CC54595C2E4AD57C00B8CFA2;
-			remoteInfo = "bgb-cpg";
-		};
-		CC5459762E4AD57D00B8CFA2 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = CC5459552E4AD57C00B8CFA2 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = CC54595C2E4AD57C00B8CFA2;
-			remoteInfo = "bgb-cpg";
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		CC54595D2E4AD57C00B8CFA2 /* bgb-cpg.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "bgb-cpg.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CC54596B2E4AD57D00B8CFA2 /* bgb-cpgTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "bgb-cpgTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CC5459752E4AD57D00B8CFA2 /* bgb-cpgUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "bgb-cpgUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CC5459A32E4AE5B400B8CFA2 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		CC5459A52E4AE5F800B8CFA2 /* APP_FLOW.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = APP_FLOW.md; sourceTree = "<group>"; };
+		CCF2CC782F0345F6007DD982 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
+		CCF2CC7A2F034602007DD982 /* OutstandingProblems.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = OutstandingProblems.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CC54595F2E4AD57C00B8CFA2 /* bgb-cpg */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "bgb-cpg";
-			sourceTree = "<group>";
-		};
-		CC54596E2E4AD57D00B8CFA2 /* bgb-cpgTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "bgb-cpgTests";
-			sourceTree = "<group>";
-		};
-		CC5459782E4AD57D00B8CFA2 /* bgb-cpgUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "bgb-cpgUITests";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -62,31 +35,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		CC5459682E4AD57D00B8CFA2 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		CC5459722E4AD57D00B8CFA2 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		CC5459542E4AD57B00B8CFA2 = {
 			isa = PBXGroup;
 			children = (
-				CC5459A52E4AE5F800B8CFA2 /* APP_FLOW.md */,
+				CCF2CC7A2F034602007DD982 /* OutstandingProblems.md */,
+				CCF2CC782F0345F6007DD982 /* AGENTS.md */,
 				CC5459A32E4AE5B400B8CFA2 /* README.md */,
 				CC54595F2E4AD57C00B8CFA2 /* bgb-cpg */,
-				CC54596E2E4AD57D00B8CFA2 /* bgb-cpgTests */,
-				CC5459782E4AD57D00B8CFA2 /* bgb-cpgUITests */,
 				CC54595E2E4AD57C00B8CFA2 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -95,8 +53,6 @@
 			isa = PBXGroup;
 			children = (
 				CC54595D2E4AD57C00B8CFA2 /* bgb-cpg.app */,
-				CC54596B2E4AD57D00B8CFA2 /* bgb-cpgTests.xctest */,
-				CC5459752E4AD57D00B8CFA2 /* bgb-cpgUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -126,52 +82,6 @@
 			productReference = CC54595D2E4AD57C00B8CFA2 /* bgb-cpg.app */;
 			productType = "com.apple.product-type.application";
 		};
-		CC54596A2E4AD57D00B8CFA2 /* bgb-cpgTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = CC5459822E4AD57D00B8CFA2 /* Build configuration list for PBXNativeTarget "bgb-cpgTests" */;
-			buildPhases = (
-				CC5459672E4AD57D00B8CFA2 /* Sources */,
-				CC5459682E4AD57D00B8CFA2 /* Frameworks */,
-				CC5459692E4AD57D00B8CFA2 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				CC54596D2E4AD57D00B8CFA2 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				CC54596E2E4AD57D00B8CFA2 /* bgb-cpgTests */,
-			);
-			name = "bgb-cpgTests";
-			packageProductDependencies = (
-			);
-			productName = "bgb-cpgTests";
-			productReference = CC54596B2E4AD57D00B8CFA2 /* bgb-cpgTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		CC5459742E4AD57D00B8CFA2 /* bgb-cpgUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = CC5459852E4AD57D00B8CFA2 /* Build configuration list for PBXNativeTarget "bgb-cpgUITests" */;
-			buildPhases = (
-				CC5459712E4AD57D00B8CFA2 /* Sources */,
-				CC5459722E4AD57D00B8CFA2 /* Frameworks */,
-				CC5459732E4AD57D00B8CFA2 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				CC5459772E4AD57D00B8CFA2 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				CC5459782E4AD57D00B8CFA2 /* bgb-cpgUITests */,
-			);
-			name = "bgb-cpgUITests";
-			packageProductDependencies = (
-			);
-			productName = "bgb-cpgUITests";
-			productReference = CC5459752E4AD57D00B8CFA2 /* bgb-cpgUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -180,18 +90,10 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1640;
-				LastUpgradeCheck = 1640;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					CC54595C2E4AD57C00B8CFA2 = {
 						CreatedOnToolsVersion = 16.4;
-					};
-					CC54596A2E4AD57D00B8CFA2 = {
-						CreatedOnToolsVersion = 16.4;
-						TestTargetID = CC54595C2E4AD57C00B8CFA2;
-					};
-					CC5459742E4AD57D00B8CFA2 = {
-						CreatedOnToolsVersion = 16.4;
-						TestTargetID = CC54595C2E4AD57C00B8CFA2;
 					};
 				};
 			};
@@ -210,8 +112,6 @@
 			projectRoot = "";
 			targets = (
 				CC54595C2E4AD57C00B8CFA2 /* bgb-cpg */,
-				CC54596A2E4AD57D00B8CFA2 /* bgb-cpgTests */,
-				CC5459742E4AD57D00B8CFA2 /* bgb-cpgUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -221,22 +121,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CCF2CC7B2F034602007DD982 /* OutstandingProblems.md in Resources */,
+				CCF2CC792F0345F6007DD982 /* AGENTS.md in Resources */,
 				CC5459A42E4AE5BA00B8CFA2 /* README.md in Resources */,
-				CC5459A62E4AE60400B8CFA2 /* APP_FLOW.md in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		CC5459692E4AD57D00B8CFA2 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		CC5459732E4AD57D00B8CFA2 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,34 +137,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		CC5459672E4AD57D00B8CFA2 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		CC5459712E4AD57D00B8CFA2 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		CC54596D2E4AD57D00B8CFA2 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = CC54595C2E4AD57C00B8CFA2 /* bgb-cpg */;
-			targetProxy = CC54596C2E4AD57D00B8CFA2 /* PBXContainerItemProxy */;
-		};
-		CC5459772E4AD57D00B8CFA2 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = CC54595C2E4AD57C00B8CFA2 /* bgb-cpg */;
-			targetProxy = CC5459762E4AD57D00B8CFA2 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		CC54597D2E4AD57D00B8CFA2 /* Debug */ = {
@@ -314,7 +174,9 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 63DVM36QYP;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -336,6 +198,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -375,7 +238,9 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 63DVM36QYP;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -390,6 +255,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -402,8 +268,10 @@
 				CODE_SIGN_ENTITLEMENTS = "bgb-cpg/bgb_cpg.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 63DVM36QYP;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -441,8 +309,10 @@
 				CODE_SIGN_ENTITLEMENTS = "bgb-cpg/bgb_cpg.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 63DVM36QYP;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -472,92 +342,6 @@
 			};
 			name = Release;
 		};
-		CC5459832E4AD57D00B8CFA2 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "board-game-barrage.bgb-cpgTests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/bgb-cpg.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/bgb-cpg";
-				XROS_DEPLOYMENT_TARGET = 2.5;
-			};
-			name = Debug;
-		};
-		CC5459842E4AD57D00B8CFA2 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "board-game-barrage.bgb-cpgTests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/bgb-cpg.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/bgb-cpg";
-				XROS_DEPLOYMENT_TARGET = 2.5;
-			};
-			name = Release;
-		};
-		CC5459862E4AD57D00B8CFA2 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "board-game-barrage.bgb-cpgUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = "bgb-cpg";
-				XROS_DEPLOYMENT_TARGET = 2.5;
-			};
-			name = Debug;
-		};
-		CC5459872E4AD57D00B8CFA2 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "board-game-barrage.bgb-cpgUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = "bgb-cpg";
-				XROS_DEPLOYMENT_TARGET = 2.5;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -575,24 +359,6 @@
 			buildConfigurations = (
 				CC5459802E4AD57D00B8CFA2 /* Debug */,
 				CC5459812E4AD57D00B8CFA2 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		CC5459822E4AD57D00B8CFA2 /* Build configuration list for PBXNativeTarget "bgb-cpgTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				CC5459832E4AD57D00B8CFA2 /* Debug */,
-				CC5459842E4AD57D00B8CFA2 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		CC5459852E4AD57D00B8CFA2 /* Build configuration list for PBXNativeTarget "bgb-cpgUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				CC5459862E4AD57D00B8CFA2 /* Debug */,
-				CC5459872E4AD57D00B8CFA2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
