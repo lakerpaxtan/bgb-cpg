@@ -18,7 +18,7 @@ enum Team: String, Codable, CaseIterable {
 enum Stage {
     case home, howTo, settings
     case packSelection, customPackBuilder
-    case intakeHandoff, intakeName, intakePicks
+    case intakeHandoff, intakeName, intakePicks, intakeManualWords
     case roundIntro, turnHandoff, turn, turnPaused, turnSkipComplete, turnComplete, recap, roundEnd, gameEnd, gameStats
 }
 
@@ -204,12 +204,19 @@ struct Settings: Codable {
     var players: Int
     var startingTeam: Team
     var timerSeconds: Int
-    var titlesPerPlayer: Int
-    var picksPerPlayer: Int
+    var wordPoolSizePerPlayer: Int
+    var wordsPerPlayer: Int
+    var manualWordsPerPlayer: Int
     var selectedPack: Pack
     var customPackFilters: CustomPackFilters // Used when selectedPack is .premadeCustom
     var acceptance: Acceptance
     var stats: StatsPref
+}
+
+extension Settings {
+    var nonManualWordsPerPlayer: Int {
+        max(0, wordsPerPlayer - manualWordsPerPlayer)
+    }
 }
 
 // Player
@@ -326,8 +333,9 @@ extension Settings {
         players: 8,
         startingTeam: .A,
         timerSeconds: 60,
-        titlesPerPlayer: 10,
-        picksPerPlayer: 3,
+        wordPoolSizePerPlayer: 10,
+        wordsPerPlayer: 3,
+        manualWordsPerPlayer: 0,
         selectedPack: .premadeStandard,
         customPackFilters: .default,
         acceptance: Acceptance(

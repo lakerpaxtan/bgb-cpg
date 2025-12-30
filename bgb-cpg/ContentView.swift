@@ -38,6 +38,9 @@ struct ContentView: View {
             case .intakePicks:
                 IntakePicksView()
                     .onAppear { print("📱 ContentView: Displaying IntakePicksView") }
+            case .intakeManualWords:
+                IntakeManualWordsView()
+                    .onAppear { print("📱 ContentView: Displaying IntakeManualWordsView") }
             case .roundIntro:
                 RoundIntroView()
                     .onAppear { print("📱 ContentView: Displaying RoundIntroView (Round \(store.currentRound.rawValue))") }

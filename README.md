@@ -9,8 +9,8 @@ This README is the single source of truth for:
 ---
 
 ## Quick Start (Player view)
-1. Tap **Start Game** → configure players, starting team, timer, and card options/content.
-2. **Pass the phone** to collect player names and each player’s card picks (Team A first, then Team B).
+1. Tap **Start Game** → configure players, starting team, timer, words per player, and manual word count.
+2. **Pass the phone** to collect player names, pack picks, and any manual word entries (Team A first, then Team B).
 3. Play **Round 1 → Round 2 → Round 3**. Scores show between rounds.
 4. Final scoreboard + confetti. **Main Menu** returns to home.
 
@@ -98,13 +98,15 @@ Build your own pack with custom filters.
 ## Player Intake (how setup works)
 - Collect Team A first, then Team B.
 - **Name validation**: must be unique and non-blank; errors appear only after typing begins.
-- Each player sees **N candidates** and must pick **M**.
-- **Reroll** swaps a single candidate card.
+- Each player sees **N word pool options** and must pick **M non-manual words**.
+- If manual words are enabled, each player enters **K manual words** after picking.
+- **Reroll** swaps a single candidate word.
 - Selection UX: tap anywhere on a card to select it (not just the circle).
-- Submitting picks:
+- Submitting words:
   - Adds the new player.
   - Adds chosen cards with case-insensitive de-dupe.
   - If de-dupe shrinks the count, replacements are drawn to keep “one card per submitted pick”.
+  - Adds manual words (6 words or fewer each).
 - Intake repeats until `settings.players` is reached, then starts Round 1.
 
 ---
@@ -153,16 +155,17 @@ Home:
 Settings:
 - Edits local copy of `Settings`, then commits to `store.settings`
 - Next: either
-  - `.packSelection` (current), or
-  - `.intakeHandoff` (legacy direct path)
+  - `.packSelection` (when non-manual words are needed), or
+  - `.intakeHandoff` (manual-only setup)
 
 Pack selection:
 - Choose Standard / Obscure / Custom
+- Set word pool size per player
 - Custom → `.customPackBuilder` → `.intakeHandoff`
 - Standard/Obscure → `.intakeHandoff`
 
 Intake (Team A then Team B):
-`.intakeHandoff → .intakeName → .intakePicks` repeating until full player count → `.roundIntro`
+`.intakeHandoff → .intakeName → .intakePicks → .intakeManualWords` (manual-only skips picks) repeating until full player count → `.roundIntro`
 
 Round start:
 - `startRound()` shuffles `allCards` into `deck` (if needed) and sets clue-giver rotation → `.turnHandoff`

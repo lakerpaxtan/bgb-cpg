@@ -62,8 +62,10 @@ final class GameStore: ObservableObject {
     @Published var pendingTeam: Team = .A
     @Published var candidateTitles: [Card] = []
     @Published var selectedPicks: Set<UUID> = []
+    @Published var pendingManualWords: [String] = []
     @Published var loadingCandidates: Bool = false
     @Published var candidateLoadingError: String? = nil
+    @Published var manualEntryError: String? = nil
     @Published var sharedTitles: [Card] = []
     @Published var showingRestartConfirmation: Bool = false
     @Published var showingEndTurnConfirmation: Bool = false
@@ -86,7 +88,7 @@ final class GameStore: ObservableObject {
         switch stage {
         case .home, .howTo:
             return [Color.white, Color(white: 0.95)]
-        case .settings, .packSelection, .customPackBuilder, .intakeHandoff, .intakeName, .intakePicks:
+        case .settings, .packSelection, .customPackBuilder, .intakeHandoff, .intakeName, .intakePicks, .intakeManualWords:
             return [Color(.systemTeal).opacity(0.12), Color(.systemBlue).opacity(0.10)]
         case .roundIntro, .turnHandoff:
             return [currentTeam.color.opacity(0.12), Color(.systemGray6)]
@@ -154,6 +156,10 @@ final class GameStore: ObservableObject {
 
     func startIntakeWithPack(_ pack: Pack) {
         print("👥 GameStore.startIntakeWithPack() - beginning player intake with pack: \(pack.displayName)")
+        if settings.nonManualWordsPerPlayer == 0 {
+            startIntakeManualOnly()
+            return
+        }
         startIntakeProcess()
         print("💾 Using premade titles for pack: \(pack.displayName)")
         setupPremadeTitlesForPack(pack)
@@ -161,6 +167,10 @@ final class GameStore: ObservableObject {
     
     func startIntakeWithCustomPack(_ customFilters: CustomPackFilters) {
         print("👥 GameStore.startIntakeWithCustomPack() - beginning player intake with custom filters")
+        if settings.nonManualWordsPerPlayer == 0 {
+            startIntakeManualOnly()
+            return
+        }
         startIntakeProcess()
         
         // Custom packs are always premade
@@ -177,6 +187,17 @@ final class GameStore: ObservableObject {
             startIntakeWithPack(settings.selectedPack)
         }
     }
+
+    func startIntakeManualOnly() {
+        print("👥 GameStore.startIntakeManualOnly() - beginning player intake with manual-only words")
+        startIntakeProcess()
+        sharedTitles = []
+        candidateTitles = []
+        candidateLoadingError = nil
+        manualEntryError = nil
+        stage = .intakeHandoff
+        print("✅ Stage changed to: .intakeHandoff")
+    }
     
     private func startIntakeProcess() {
         // Reset game state
@@ -190,6 +211,10 @@ final class GameStore: ObservableObject {
         bonusTimePlayer = nil
         currentRound = .one
         currentTeam = settings.startingTeam
+        candidateTitles = []
+        selectedPicks = []
+        pendingManualWords = []
+        manualEntryError = nil
 
         intakeExpectedCount = settings.players
         intakeTeamCollecting = .A
@@ -202,8 +227,8 @@ final class GameStore: ObservableObject {
         
         loadingCandidates = false
         candidateLoadingError = nil
-        if availableTitles.count < (settings.players * settings.titlesPerPlayer) {
-            candidateLoadingError = "Pack '\(pack.displayName)' only has \(availableTitles.count) titles, need \(settings.players * settings.titlesPerPlayer). Try a different pack."
+        if availableTitles.count < (settings.players * settings.wordPoolSizePerPlayer) {
+            candidateLoadingError = "Pack '\(pack.displayName)' only has \(availableTitles.count) titles, need \(settings.players * settings.wordPoolSizePerPlayer). Try a different pack."
             return
         }
         
@@ -216,8 +241,8 @@ final class GameStore: ObservableObject {
         let availableTitles = TitleBank.titlesForPack(.premadeCustom, customFilters: customFilters)
         print("📦 Loaded \(availableTitles.count) titles for custom pack")
         
-        if availableTitles.count < (settings.players * settings.titlesPerPlayer) {
-            candidateLoadingError = "Custom pack only has \(availableTitles.count) titles, need \(settings.players * settings.titlesPerPlayer). Adjust your filters."
+        if availableTitles.count < (settings.players * settings.wordPoolSizePerPlayer) {
+            candidateLoadingError = "Custom pack only has \(availableTitles.count) titles, need \(settings.players * settings.wordPoolSizePerPlayer). Adjust your filters."
             return
         }
         
@@ -233,6 +258,8 @@ final class GameStore: ObservableObject {
         print("➡️ GameStore.intakeProceed() - moving to name entry for \(intakeTeamCollecting)")
         pendingName = ""
         pendingTeam = intakeTeamCollecting
+        pendingManualWords = []
+        manualEntryError = nil
         stage = .intakeName
         print("✅ Stage changed to: .intakeName")
     }
@@ -240,10 +267,32 @@ final class GameStore: ObservableObject {
     func intakeSaveNameAndShowPicks() {
         print("📝 Player name entry: '\(pendingName)' joining \(pendingTeam)")
         selectedPicks = []
+        manualEntryError = nil
         
         // Always use pre-loaded shared pool (regardless of source)
-        print("🎲 Generating candidate titles for player selection")
-        generateCandidatesFromSharedPool()
+        if settings.nonManualWordsPerPlayer > 0 {
+            print("🎲 Generating candidate words for player selection")
+            generateCandidatesFromSharedPool()
+        } else {
+            prepareManualWordEntry()
+            stage = .intakeManualWords
+            print("✅ Stage changed to: .intakeManualWords")
+        }
+    }
+
+    func intakeProceedToManualWords() {
+        prepareManualWordEntry()
+        stage = .intakeManualWords
+        print("✅ Stage changed to: .intakeManualWords")
+    }
+
+    private func prepareManualWordEntry() {
+        pendingManualWords = Array(repeating: "", count: settings.manualWordsPerPlayer)
+        manualEntryError = nil
+    }
+
+    private func wordCount(_ text: String) -> Int {
+        text.split(whereSeparator: { $0.isWhitespace }).count
     }
 
     // MARK: - Candidate generation and selection
@@ -326,14 +375,14 @@ final class GameStore: ObservableObject {
     }
     
     private func generateCandidatesFromSharedPool() {
-        print("🎲 GameStore.generateCandidatesFromSharedPool() - generating \(settings.titlesPerPlayer) candidates")
+        print("🎲 GameStore.generateCandidatesFromSharedPool() - generating \(settings.wordPoolSizePerPlayer) candidates")
         let existingTitles = Set(allCards.map { $0.title.lowercased() })
         let availableTitles = sharedTitles.filter { card in
             !existingTitles.contains(card.title.lowercased())
         }
         print("📋 Available titles after deduplication: \(availableTitles.count)")
         
-        let needed = settings.titlesPerPlayer
+        let needed = settings.wordPoolSizePerPlayer
         
         // Group available titles by their subject for diversity
         let titlesBySubject = Dictionary(grouping: availableTitles) { $0.subject }
@@ -427,21 +476,60 @@ final class GameStore: ObservableObject {
     func togglePick(_ id: UUID) {
         if selectedPicks.contains(id) {
             selectedPicks.remove(id)
-            print("📝 Deselected pick (\(selectedPicks.count)/\(settings.picksPerPlayer))")
+            print("📝 Deselected pick (\(selectedPicks.count)/\(settings.nonManualWordsPerPlayer))")
             Haptics.tap()
         } else {
             selectedPicks.insert(id)
-            print("📝 Selected pick (\(selectedPicks.count)/\(settings.picksPerPlayer))")
+            print("📝 Selected pick (\(selectedPicks.count)/\(settings.nonManualWordsPerPlayer))")
             Haptics.tap()
         }
     }
 
-    func submitPlayerAndPicks() {
+    func submitPlayerAndWords() {
+        manualEntryError = nil
+        if settings.nonManualWordsPerPlayer > 0 && selectedPicks.count != settings.nonManualWordsPerPlayer {
+            print("⚠️ submitPlayerAndWords() blocked: selectedPicks=\(selectedPicks.count), expected=\(settings.nonManualWordsPerPlayer)")
+            return
+        }
+
+        let manualWords = pendingManualWords
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        if settings.manualWordsPerPlayer > 0 {
+            if manualWords.count != settings.manualWordsPerPlayer {
+                manualEntryError = "Please fill in all manual words."
+                print("⚠️ submitPlayerAndWords() blocked: manual words incomplete")
+                return
+            }
+            if manualWords.contains(where: { wordCount($0) > 6 }) {
+                manualEntryError = "Manual words must be 6 words or fewer."
+                print("⚠️ submitPlayerAndWords() blocked: manual words too long")
+                return
+            }
+        }
+
+        let chosen = candidateTitles.filter { selectedPicks.contains($0.id) }
+        var globalLower = Set(allCards.map { $0.title.lowercased() })
+        let disallowedManual = globalLower.union(chosen.map { $0.title.lowercased() })
+        if settings.manualWordsPerPlayer > 0 {
+            let manualLower = manualWords.map { $0.lowercased() }
+            if Set(manualLower).count != manualLower.count {
+                manualEntryError = "Manual words must be unique."
+                print("⚠️ submitPlayerAndWords() blocked: duplicate manual words")
+                return
+            }
+            if manualLower.contains(where: { disallowedManual.contains($0) }) {
+                manualEntryError = "Manual words must be unique across the game."
+                print("⚠️ submitPlayerAndWords() blocked: manual words duplicate existing entries")
+                return
+            }
+        }
+
         // Save the player with trimmed name
         let trimmedName = pendingName.trimmingCharacters(in: .whitespacesAndNewlines)
         let p = Player(name: trimmedName.isEmpty ? defaultPlayerName() : trimmedName,
                        team: pendingTeam)
-        print("✓ GameStore.submitPlayerAndPicks() - player: '\(p.name)' (\(p.team)), picks: \(selectedPicks.count)")
+        print("✓ GameStore.submitPlayerAndWords() - player: '\(p.name)' (\(p.team)), picks: \(selectedPicks.count), manual: \(manualWords.count)")
         players.append(p)
         if p.team == .A { teamAOrder.append(p) } else { teamBOrder.append(p) }
         
@@ -450,9 +538,7 @@ final class GameStore: ObservableObject {
 
         // Add picks to shared deck (de-dupe); if we lose any to de-dupe, auto-draw replacements
         var added = 0
-        var globalLower = Set(allCards.map { $0.title.lowercased() })
-        let chosen = candidateTitles.filter { selectedPicks.contains($0.id) }
-        print("🃏 Selected titles: \(chosen.map { $0.title }.joined(separator: ", "))")
+        print("🃏 Selected words: \(chosen.map { $0.title }.joined(separator: ", "))")
 
         for card in chosen {
             let low = card.title.lowercased()
@@ -463,14 +549,24 @@ final class GameStore: ObservableObject {
             }
         }
 
-        while added < settings.picksPerPlayer,
+        while added < settings.nonManualWordsPerPlayer,
               let extra = drawOneCard(avoid: globalLower) {
             allCards.append(extra)
             globalLower.insert(extra.title.lowercased())
             added += 1
         }
+
+        for manualWord in manualWords {
+            let lower = manualWord.lowercased()
+            if !globalLower.contains(lower) {
+                allCards.append(Card(title: manualWord, subject: "Manual"))
+                globalLower.insert(lower)
+            }
+        }
         print("🃋 Total cards in game deck: \(allCards.count)")
 
+        pendingManualWords = []
+        manualEntryError = nil
         // Move to next intake target
         advanceIntakePointer()
     }

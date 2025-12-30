@@ -21,8 +21,8 @@ struct SettingsView: View {
                         Text("Gameplay").font(.title3.bold())
                         Stepper("Players: \(s.players)", value: $s.players, in: 4...20)
                         Stepper("Turn timer: \(s.timerSeconds)s", value: $s.timerSeconds, in: 30...120, step: 5)
-                        Stepper("Candidates per player: \(s.titlesPerPlayer)", value: $s.titlesPerPlayer, in: 6...15)
-                        Stepper("Picks per player: \(s.picksPerPlayer)", value: $s.picksPerPlayer, in: 2...5)
+                        Stepper("Words per player: \(s.wordsPerPlayer)", value: $s.wordsPerPlayer, in: 2...5)
+                        Stepper("Manual entry words per player: \(s.manualWordsPerPlayer)", value: $s.manualWordsPerPlayer, in: 0...s.wordsPerPlayer)
                     }
                 }
                 .padding(24)
@@ -30,11 +30,16 @@ struct SettingsView: View {
 
             // Action buttons - Fixed at bottom
             VStack(spacing: 12) {
-                BigButton(title: "Next — Choose Pack") {
+                let nextTitle = s.nonManualWordsPerPlayer == 0 ? "Next — Manual Words" : "Next — Choose Pack"
+                BigButton(title: nextTitle) {
                     store.settings = s
                     print("⚙️ Settings saved, proceeding to pack selection")
-                    store.stage = .packSelection
-                    print("✅ Stage changed to: .packSelection")
+                    if s.nonManualWordsPerPlayer == 0 {
+                        store.startIntakeManualOnly()
+                    } else {
+                        store.stage = .packSelection
+                        print("✅ Stage changed to: .packSelection")
+                    }
                 }
 
                 // Back button
@@ -57,6 +62,11 @@ struct SettingsView: View {
             .padding(.bottom, 24)
         }
         .onAppear { s = store.settings }
+        .onChange(of: s.wordsPerPlayer) { _, newValue in
+            if s.manualWordsPerPlayer > newValue {
+                s.manualWordsPerPlayer = newValue
+            }
+        }
     }
 
 }
@@ -250,7 +260,7 @@ struct IntakeNameView: View {
 
             VStack(spacing: 12) {
                 BigButton(title: "Next") {
-                    print("➡️ Moving from name entry to title selection")
+                    print("➡️ Moving from name entry to word selection")
                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     store.intakeSaveNameAndShowPicks()
                 }
@@ -269,11 +279,11 @@ struct IntakePicksView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Your Picks")
+                Text("Your Words")
                     .font(.title.bold())
                 Spacer()
                 let count = store.selectedPicks.count
-                Text("\(count)/\(store.settings.picksPerPlayer)")
+                Text("\(count)/\(store.settings.nonManualWordsPerPlayer)")
                     .font(.headline)
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(Color.black.opacity(0.06))
@@ -303,12 +313,19 @@ struct IntakePicksView: View {
             }
 
             VStack(spacing: 12) {
-                let isCorrectCount = store.selectedPicks.count == store.settings.picksPerPlayer
-                let buttonTitle = isCorrectCount ? "Submit" : "Please select exactly \(store.settings.picksPerPlayer) titles"
+                let isCorrectCount = store.selectedPicks.count == store.settings.nonManualWordsPerPlayer
+                let needsManualEntry = store.settings.manualWordsPerPlayer > 0
+                let readyTitle = needsManualEntry ? "Next — Manual Words" : "Submit"
+                let buttonTitle = isCorrectCount ? readyTitle : "Please select exactly \(store.settings.nonManualWordsPerPlayer) words"
                 
                 BigButton(title: buttonTitle) {
-                    print("📝 Submitting player with \(store.selectedPicks.count) selected titles")
-                    store.submitPlayerAndPicks()
+                    if needsManualEntry {
+                        print("📝 Picks complete, moving to manual words")
+                        store.intakeProceedToManualWords()
+                    } else {
+                        print("📝 Submitting player with \(store.selectedPicks.count) selected words")
+                        store.submitPlayerAndWords()
+                    }
                 }
                 .disabled(!isCorrectCount)
                 
@@ -317,7 +334,7 @@ struct IntakePicksView: View {
                         .font(.title3)
                         .foregroundStyle(.orange)
                     
-                    Text("Remember your selected titles! Your team gains an advantage when only you know which cards are coming up.")
+                    Text("Remember your selected words! Your team gains an advantage when only you know which cards are coming up.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -330,6 +347,114 @@ struct IntakePicksView: View {
                 
                 RestartButton()
                     .padding(.top, 4)
+            }
+        }
+        .padding(24)
+    }
+}
+
+struct IntakeManualWordsView: View {
+    @EnvironmentObject var store: GameStore
+    @FocusState private var focusedIndex: Int?
+
+    private func wordCount(_ text: String) -> Int {
+        text.split(whereSeparator: { $0.isWhitespace }).count
+    }
+
+    private func binding(for index: Int) -> Binding<String> {
+        Binding(
+            get: {
+                if index < store.pendingManualWords.count {
+                    return store.pendingManualWords[index]
+                }
+                return ""
+            },
+            set: { newValue in
+                if index < store.pendingManualWords.count {
+                    store.pendingManualWords[index] = newValue
+                    store.manualEntryError = nil
+                }
+            }
+        )
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Manual Words")
+                    .font(.title.bold())
+                Spacer()
+                Text("\(store.pendingManualWords.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }.count)/\(store.settings.manualWordsPerPlayer)")
+                    .font(.headline)
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .background(Color.black.opacity(0.06))
+                    .clipShape(Capsule())
+            }
+
+            if let error = store.manualEntryError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.red.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+
+            VStack(spacing: 8) {
+                Image(systemName: "lightbulb.fill")
+                    .font(.title3)
+                    .foregroundStyle(.orange)
+                Text("No inside jokes • No obscure proper nouns • No phrases longer than 6 words")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+            }
+            .padding(.vertical, 16)
+            .background(Color.orange.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .frame(maxWidth: .infinity)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(store.pendingManualWords.indices, id: \.self) { index in
+                        VStack(alignment: .leading, spacing: 6) {
+                            TextField("Word \(index + 1)", text: binding(for: index))
+                                .textInputAutocapitalization(.sentences)
+                                .autocorrectionDisabled(false)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(Color.white.opacity(0.9))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .shadow(color: .black.opacity(0.06), radius: 6, y: 3)
+                                .focused($focusedIndex, equals: index)
+
+                            let count = wordCount(store.pendingManualWords[index])
+                            if count > 6 {
+                                Text("Please keep this to 6 words or fewer.")
+                                    .font(.caption)
+                                    .foregroundStyle(.red)
+                            }
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
+            VStack(spacing: 12) {
+                let trimmedWords = store.pendingManualWords.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                let allFilled = trimmedWords.allSatisfy { !$0.isEmpty }
+                let allShortEnough = trimmedWords.allSatisfy { wordCount($0) <= 6 }
+                let canContinue = allFilled && allShortEnough
+
+                BigButton(title: canContinue ? "Next" : "Please fill all words (max 6 words each)") {
+                    print("📝 Submitting manual words")
+                    store.submitPlayerAndWords()
+                }
+                .disabled(!canContinue)
+
+                RestartButton()
             }
         }
         .padding(24)
@@ -384,6 +509,7 @@ private struct CandidateRow: View {
 struct PackSelectionView: View {
     @EnvironmentObject var store: GameStore
     @State private var selectedPack: Pack = .premadeStandard
+    @State private var wordPoolSizePerPlayer: Int = 10
     
     var body: some View {
         VStack(spacing: 20) {
@@ -393,7 +519,7 @@ struct PackSelectionView: View {
                     .font(.title.bold())
                     .frame(maxWidth: .infinity, alignment: .center)
 
-                Text("Select a curated pack of titles for your game")
+                Text("Select a curated pack of words for your game")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -401,6 +527,18 @@ struct PackSelectionView: View {
             .padding(.horizontal, 24)
             .padding(.top, 24)
             .padding(.bottom, 16)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Word Pool Size per player: \(wordPoolSizePerPlayer)")
+                    .font(.headline)
+                Text("How many options each player can choose from")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Stepper("", value: $wordPoolSizePerPlayer, in: 6...15)
+                    .labelsHidden()
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 8)
 
             // Pack cards scrollview - No background color
             ScrollView(.horizontal, showsIndicators: false) {
@@ -448,6 +586,7 @@ struct PackSelectionView: View {
                     BigButton(title: "Customize Your Pack") {
                         var settings = store.settings
                         settings.selectedPack = selectedPack
+                        settings.wordPoolSizePerPlayer = wordPoolSizePerPlayer
                         store.settings = settings
                         print("📦 Selected pack: \(selectedPack.displayName)")
                         store.stage = .customPackBuilder
@@ -457,6 +596,7 @@ struct PackSelectionView: View {
                     BigButton(title: "Continue to Player Setup") {
                         var settings = store.settings
                         settings.selectedPack = selectedPack
+                        settings.wordPoolSizePerPlayer = wordPoolSizePerPlayer
                         store.settings = settings
                         print("📦 Selected pack: \(selectedPack.displayName)")
                         store.startIntakeWithPack(selectedPack)
@@ -484,6 +624,7 @@ struct PackSelectionView: View {
         }
         .onAppear {
             selectedPack = store.settings.selectedPack
+            wordPoolSizePerPlayer = store.settings.wordPoolSizePerPlayer
         }
     }
 }
