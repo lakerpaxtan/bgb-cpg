@@ -1,4 +1,4 @@
-# bgb-cpg — Wiki-Celebrity (Fishbowl-style party game)
+# bgb-cpg — Charade Barrage (Fishbowl-style party game)
 
 A fast party charades game played in **3 rounds** with the **same deck** each time, getting progressively stricter.
 
@@ -70,7 +70,7 @@ All rounds use the **same deck** (reshuffled between rounds). Gestures are alway
 ---
 
 ## Content Sources & Packs
-The app offers **3 curated content packs** (Wikipedia packs temporarily disabled):
+The app offers **3 curated content packs**:
 
 ### Standard (499 titles)
 Familiar idioms, movies, food, and everyday phrases. Great for casual play.
@@ -137,8 +137,7 @@ Entry graph:
 - `GameStore.swift`: central state + business logic (turn lifecycle, scoring, intake, round transitions, bonus time, stats).
 - `GameModels.swift`: core types (`Team`, `Stage`, `RoundPhase`, `Settings`, `Player`, `Card`, `Token`, `CorrectEvent`, `RoundScore`, etc).
 - `ContentView.swift`: view router; gradient background changes by stage/round.
-- `TitleBank.swift`: offline “Wikipedia-ish” title pools + filtering so the app works without network.
-- `WikipediaService.swift`: Wikipedia integration (currently disabled at the pack level).
+- `TitleBank.swift`: premade title pools + filtering so the app works without network.
 - `Components.swift`: shared UI components (`BigButton`, `OutlineButton`, `TokenChips`, `FlowLayout`, `ConfettiView`).
 - View files:
   - `Views_HomeHowTo.swift`: home + tutorial

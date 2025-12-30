@@ -12,10 +12,6 @@ enum TurnEndReason {
 @MainActor
 final class GameStore: ObservableObject {
 
-    // MARK: - Services
-    
-    @Published var wikipediaService = WikipediaService()
-    
     // MARK: - Published state
 
     @Published var stage: Stage = .home
@@ -68,7 +64,7 @@ final class GameStore: ObservableObject {
     @Published var selectedPicks: Set<UUID> = []
     @Published var loadingCandidates: Bool = false
     @Published var candidateLoadingError: String? = nil
-    @Published var sharedWikipediaTitles: [Card] = [] // Pre-loaded titles for all players
+    @Published var sharedTitles: [Card] = []
     @Published var showingRestartConfirmation: Bool = false
     @Published var showingEndTurnConfirmation: Bool = false
     @Published var showingEndGameConfirmation: Bool = false
@@ -152,11 +148,6 @@ final class GameStore: ObservableObject {
         stage = .settings
         print("✅ Stage changed to: .settings")
         
-        // Check Wikipedia availability when entering settings
-        Task {
-            print("🌐 Checking Wikipedia availability in background...")
-            await wikipediaService.checkAvailability()
-        }
     }
 
     // MARK: - Settings → Pack Selection → Intake
@@ -164,33 +155,23 @@ final class GameStore: ObservableObject {
     func startIntakeWithPack(_ pack: Pack) {
         print("👥 GameStore.startIntakeWithPack() - beginning player intake with pack: \(pack.displayName)")
         startIntakeProcess()
-        
-        if pack.isWikipedia {
-            // For Wikipedia packs, we need to fetch content
-            loadingCandidates = true
-            candidateLoadingError = nil
-            print("🌐 Starting Wikipedia content loading for pack: \(pack.displayName)")
-            preloadTitlesForPack(pack)
-        } else {
-            // For offline packs, titles are immediately available
-            print("💾 Using offline titles for pack: \(pack.displayName)")
-            setupOfflineTitlesForPack(pack)
-        }
+        print("💾 Using premade titles for pack: \(pack.displayName)")
+        setupPremadeTitlesForPack(pack)
     }
     
     func startIntakeWithCustomPack(_ customFilters: CustomPackFilters) {
         print("👥 GameStore.startIntakeWithCustomPack() - beginning player intake with custom filters")
         startIntakeProcess()
         
-        // Custom packs are always offline
-        print("💾 Using offline titles with custom filters")
-        setupOfflineTitlesForCustomPack(customFilters)
+        // Custom packs are always premade
+        print("💾 Using premade titles with custom filters")
+        setupPremadeTitlesForCustomPack(customFilters)
     }
     
     // Legacy method for backward compatibility - now uses pack system
     func startIntake() {
         print("👥 GameStore.startIntake() - beginning player intake process with current pack: \(settings.selectedPack.displayName)")
-        if settings.selectedPack == .offlineCustom {
+        if settings.selectedPack == .premadeCustom {
             startIntakeWithCustomPack(settings.customPackFilters)
         } else {
             startIntakeWithPack(settings.selectedPack)
@@ -215,22 +196,24 @@ final class GameStore: ObservableObject {
         intakeIndexInTeam = 0
     }
     
-    private func setupOfflineTitlesForPack(_ pack: Pack) {
+    private func setupPremadeTitlesForPack(_ pack: Pack) {
         let availableTitles = TitleBank.titlesForPack(pack)
         print("📦 Loaded \(availableTitles.count) titles for pack: \(pack.displayName)")
         
+        loadingCandidates = false
+        candidateLoadingError = nil
         if availableTitles.count < (settings.players * settings.titlesPerPlayer) {
             candidateLoadingError = "Pack '\(pack.displayName)' only has \(availableTitles.count) titles, need \(settings.players * settings.titlesPerPlayer). Try a different pack."
             return
         }
         
-        sharedWikipediaTitles = availableTitles // Reusing the existing array for consistency
+        sharedTitles = availableTitles
         stage = .intakeHandoff
         print("✅ Stage changed to: .intakeHandoff")
     }
     
-    private func setupOfflineTitlesForCustomPack(_ customFilters: CustomPackFilters) {
-        let availableTitles = TitleBank.titlesForPack(.offlineCustom, customFilters: customFilters)
+    private func setupPremadeTitlesForCustomPack(_ customFilters: CustomPackFilters) {
+        let availableTitles = TitleBank.titlesForPack(.premadeCustom, customFilters: customFilters)
         print("📦 Loaded \(availableTitles.count) titles for custom pack")
         
         if availableTitles.count < (settings.players * settings.titlesPerPlayer) {
@@ -238,67 +221,9 @@ final class GameStore: ObservableObject {
             return
         }
         
-        sharedWikipediaTitles = availableTitles // Reusing the existing array for consistency  
+        sharedTitles = availableTitles
         stage = .intakeHandoff
         print("✅ Stage changed to: .intakeHandoff")
-    }
-    
-    // Preload titles for a specific Wikipedia pack
-    private func preloadTitlesForPack(_ pack: Pack) {
-        print("📦 GameStore.preloadTitlesForPack() - starting title preloading for \(pack.displayName)")
-        Task {
-            await preloadWikipediaPackAsync(pack)
-        }
-    }
-    
-    @MainActor
-    private func preloadWikipediaPackAsync(_ pack: Pack) async {
-        loadingCandidates = true
-        candidateLoadingError = nil
-        sharedWikipediaTitles = []
-        
-        let totalNeeded = settings.players * settings.titlesPerPlayer
-        print("📊 GameStore.preloadWikipediaPackAsync() - need \(totalNeeded) total titles for \(pack.displayName)")
-        
-        guard let wikipediaQuery = pack.filters.wikipediaQuery else {
-            candidateLoadingError = "Pack '\(pack.displayName)' is not configured for Wikipedia content."
-            loadingCandidates = false
-            return
-        }
-        
-        do {
-            // Convert pack's WikipediaQuery to the format expected by wikipediaService
-            let wikipediaFilters = WikipediaFilters(
-                categories: Set(wikipediaQuery.categories.compactMap { WikipediaCategory(id: $0, title: $0) }),
-                wordLimit: wikipediaQuery.wordLimitRange,
-                popularityPercentile: wikipediaQuery.popularityRange,
-                createdYears: 2001...2025,
-                updatedYears: 2020...2025
-            )
-            
-            let wikipediaCards = try await wikipediaService.fetchTitles(
-                filters: wikipediaFilters,
-                count: totalNeeded
-            )
-            
-            if wikipediaCards.count < totalNeeded {
-                print("❌ Not enough Wikipedia titles: got \(wikipediaCards.count), need \(totalNeeded)")
-                candidateLoadingError = "Only found \(wikipediaCards.count) Wikipedia articles for '\(pack.displayName)' (need \(totalNeeded)). Try a different pack."
-                loadingCandidates = false
-                return
-            }
-            
-            sharedWikipediaTitles = wikipediaCards
-            print("✅ Successfully loaded \(wikipediaCards.count) Wikipedia titles for \(pack.displayName)")
-            stage = .intakeHandoff
-            print("✅ Stage changed to: .intakeHandoff")
-        } catch {
-            candidateLoadingError = "Wikipedia failed for '\(pack.displayName)': \(error.localizedDescription). Try a different pack or check your connection."
-            print("❌ Wikipedia pack load failed: \(error)")
-            sharedWikipediaTitles = []
-        }
-        
-        loadingCandidates = false
     }
     
     // DELETED: preloadTitles() - unused legacy function replaced by pack-specific preload methods
@@ -336,16 +261,10 @@ final class GameStore: ObservableObject {
     }
 
     private func drawOneCard(avoid existing: Set<String>) -> Card? {
-        if settings.selectedPack.isWikipedia {
-            // For Wikipedia packs, fall back to offline for individual draws
-            // Wikipedia fetching will be done in bulk during generateCandidates
-            return drawOfflineCard(avoid: existing)
-        } else {
-            return drawOfflineCard(avoid: existing)
-        }
+        return drawPremadeCard(avoid: existing)
     }
     
-    private func drawOfflineCard(avoid existing: Set<String>) -> Card? {
+    private func drawPremadeCard(avoid existing: Set<String>) -> Card? {
         // try up to some attempts to avoid duplicates and honor pack filters
         let categories = categoryUniverse()
         guard let randomCategory = categories.randomElement() else { return nil }
@@ -363,49 +282,7 @@ final class GameStore: ObservableObject {
     
     
     
-    @MainActor
-    private func preloadWikipediaTitlesAsync(totalNeeded: Int) async {
-        print("🌐 Fetching Wikipedia titles for pack: \(settings.selectedPack.displayName)")
-        
-        guard let wikipediaQuery = settings.selectedPack.filters.wikipediaQuery else {
-            print("⚠️ No Wikipedia query defined for pack \(settings.selectedPack)")
-            candidateLoadingError = "No Wikipedia configuration for this pack"
-            return
-        }
-        
-        // Convert PackWikipediaQuery to WikipediaFilters
-        let wikipediaFilters = WikipediaFilters(
-            categories: Set(wikipediaQuery.categories.map { WikipediaCategory(id: $0, title: $0.replacingOccurrences(of: "_", with: " ")) }),
-            wordLimit: wikipediaQuery.wordLimitRange,
-            popularityPercentile: wikipediaQuery.popularityRange,
-            createdYears: 2001...2025,
-            updatedYears: 2020...2025
-        )
-        
-        do {
-            let wikipediaCards = try await wikipediaService.fetchTitles(
-                filters: wikipediaFilters,
-                count: totalNeeded
-            )
-            
-            // Check if we got enough Wikipedia titles
-            if wikipediaCards.count < totalNeeded {
-                print("❌ Not enough Wikipedia titles: got \(wikipediaCards.count), need \(totalNeeded)")
-                candidateLoadingError = "Only found \(wikipediaCards.count) Wikipedia articles (need \(totalNeeded)). Please adjust your filters."
-                return
-            }
-            
-            sharedWikipediaTitles = wikipediaCards
-            print("✅ Successfully loaded \(wikipediaCards.count) Wikipedia titles")
-        } catch {
-            candidateLoadingError = "Wikipedia failed: \(error.localizedDescription). Please check your connection or adjust your filters."
-            print("❌ Wikipedia pre-load failed: \(error)")
-            sharedWikipediaTitles = []
-            return
-        }
-    }
-    
-    private func preloadOfflineTitles(totalNeeded: Int) {
+    private func preloadPremadeTitles(totalNeeded: Int) {
         let subjects = categoryUniverse()
         var set = Set<String>()
         var allCards: [Card] = []
@@ -445,13 +322,13 @@ final class GameStore: ObservableObject {
             }
         }
         
-        sharedWikipediaTitles = allCards
+        sharedTitles = allCards
     }
     
     private func generateCandidatesFromSharedPool() {
         print("🎲 GameStore.generateCandidatesFromSharedPool() - generating \(settings.titlesPerPlayer) candidates")
         let existingTitles = Set(allCards.map { $0.title.lowercased() })
-        let availableTitles = sharedWikipediaTitles.filter { card in
+        let availableTitles = sharedTitles.filter { card in
             !existingTitles.contains(card.title.lowercased())
         }
         print("📋 Available titles after deduplication: \(availableTitles.count)")
@@ -534,16 +411,7 @@ final class GameStore: ObservableObject {
         // keep trying until we find a replacement
         var newCard: Card? = nil
         
-        if settings.selectedPack.isWikipedia {
-            // For Wikipedia packs, use shared pool
-            let availableTitles = sharedWikipediaTitles.filter { card in
-                !existing.contains(card.title.lowercased())
-            }
-            newCard = availableTitles.randomElement()
-        } else {
-            // For offline packs, use the draw logic
-            newCard = drawOneCard(avoid: existing)
-        }
+        newCard = drawOneCard(avoid: existing)
         
         if let new = newCard {
             print("✨ Reroll successful: '\(candidateTitles[idx].title)' -> '\(new.title)'")

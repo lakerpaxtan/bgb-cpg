@@ -383,10 +383,10 @@ private struct CandidateRow: View {
 
 struct PackSelectionView: View {
     @EnvironmentObject var store: GameStore
-    @State private var selectedPack: Pack = .offlineStandard
+    @State private var selectedPack: Pack = .premadeStandard
     
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 20) {
             // Header - Top aligned
             VStack(spacing: 24) {
                 Text("Choose Pack")
@@ -430,6 +430,7 @@ struct PackSelectionView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 16)
             }
             .padding(.vertical, 16)
@@ -437,13 +438,13 @@ struct PackSelectionView: View {
             .background(Color.black.opacity(0.03))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .padding(.horizontal, 24)
-            .frame(height: 100)
+            .frame(minHeight: 100)
 
             Spacer()
 
             // Action buttons - Fixed at bottom
             VStack(spacing: 12) {
-                if selectedPack == .offlineCustom {
+                if selectedPack == .premadeCustom {
                     BigButton(title: "Customize Your Pack") {
                         var settings = store.settings
                         settings.selectedPack = selectedPack
@@ -498,11 +499,11 @@ struct PackCard: View {
                 // Pack type indicator
                 HStack {
                     Circle()
-                        .fill(pack.isWikipedia ? Color.orange : Color.blue)
+                        .fill(Color.blue)
                         .frame(width: 8, height: 8)
-                    Text(pack.isWikipedia ? "Wikipedia" : "Offline")
+                    Text("Premade")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(pack.isWikipedia ? .orange : .blue)
+                        .foregroundStyle(.blue)
                     Spacer()
                     if pack.isCustom {
                         Image(systemName: "slider.horizontal.3")
@@ -521,13 +522,13 @@ struct PackCard: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
-                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 
                 Spacer()
                 
                 // Sample titles preview (if available)
-                if !pack.isWikipedia && !pack.isCustom {
+                if !pack.isCustom {
                     let sampleTitles = TitleBank.titlesForPack(pack).prefix(3)
                     if !sampleTitles.isEmpty {
                         VStack(alignment: .leading, spacing: 2) {
@@ -545,7 +546,7 @@ struct PackCard: View {
                 }
             }
             .padding(16)
-            .frame(width: 220, height: 200)
+            .frame(width: 220, height: 240)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color.white)
@@ -702,7 +703,7 @@ struct CustomPackBuilderView: View {
                     }
                     
                     // Preview
-                    let previewTitles = TitleBank.titlesForPack(.offlineCustom, customFilters: customFilters)
+                    let previewTitles = TitleBank.titlesForPack(.premadeCustom, customFilters: customFilters)
                     if !previewTitles.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Preview (\(previewTitles.count) titles available)")
@@ -757,15 +758,15 @@ struct CustomPackBuilderView: View {
 
             // Action buttons - Fixed at bottom
             VStack(spacing: 12) {
-                let hasValidTitles = !TitleBank.titlesForPack(.offlineCustom, customFilters: customFilters).isEmpty
+                let hasValidTitles = !TitleBank.titlesForPack(.premadeCustom, customFilters: customFilters).isEmpty
 
                 BigButton(title: hasValidTitles ? "Use Custom Pack" : "Adjust Filters") {
                     if hasValidTitles {
                         var settings = store.settings
-                        settings.selectedPack = .offlineCustom
+                        settings.selectedPack = .premadeCustom
                         settings.customPackFilters = customFilters
                         store.settings = settings
-                        print("📦 Custom pack configured with \(TitleBank.titlesForPack(.offlineCustom, customFilters: customFilters).count) titles")
+                        print("📦 Custom pack configured with \(TitleBank.titlesForPack(.premadeCustom, customFilters: customFilters).count) titles")
                         store.startIntakeWithCustomPack(customFilters)
                     }
                 }
@@ -829,4 +830,3 @@ struct CategoryChips: View {
         }
     }
 }
-

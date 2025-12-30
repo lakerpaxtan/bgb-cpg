@@ -1,6 +1,6 @@
 # AGENTS.md
 
-## Project: bgb-cpg (Wiki-Celebrity / Fishbowl-style party game)
+## Project: bgb-cpg (Charade Barrage / Fishbowl-style party game)
 SwiftUI app with a single source of truth (`GameStore`) and a stage-based router (`Stage` enum → `ContentView` switch).
 Keep changes small, testable, and easy to review.
 

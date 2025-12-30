@@ -6,7 +6,7 @@ struct HomeView: View {
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
-            Text("Wiki-Celebrity")
+            Text("Charade Barrage")
                 .font(.system(size: 42, weight: .heavy, design: .rounded))
                 .tracking(0.5)
                 .foregroundStyle(.primary)
@@ -47,7 +47,7 @@ struct HowToView: View {
     @Environment(\.presentationMode) var presentationMode
 
     let slides: [String] = [
-        "Wiki-Celebrity is a 3-round party game where teams guess Wikipedia-style titles using the same deck each round, with progressively harder rules. Test your knowledge and creativity!",
+        "Charade Barrage is a 3-round party game where teams guess curated titles using the same deck each round, with progressively harder rules. Test your knowledge and creativity!",
         
         "GAME SETUP\n\n• 4-10 players split into Team A and Team B\n\n• Each player contributes X titles (that only they will know)\n\n• All contributed titles go into one shared deck\n\n• Teams alternate having one \"clue-giver\" while teammates guess",
         
