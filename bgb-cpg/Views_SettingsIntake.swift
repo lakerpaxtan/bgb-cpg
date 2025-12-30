@@ -71,67 +71,6 @@ struct SettingsView: View {
 
 }
 
-struct LoadingButton: View {
-    let isLoading: Bool
-    let normalTitle: String
-    let loadingTitle: String
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                if isLoading {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                        .foregroundStyle(.white)
-                    Text(loadingTitle)
-                        .font(.title3.weight(.semibold))
-                } else {
-                    Text(normalTitle)
-                        .font(.title3.weight(.semibold))
-                }
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(isLoading ? Color.gray : Color.blue)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-        }
-        .disabled(isLoading)
-        .animation(.easeInOut(duration: 0.2), value: isLoading)
-    }
-}
-
-struct SubjectsChips: View {
-    @Binding var selected: Set<Subject>
-
-    var body: some View {
-        FlowLayout {
-            ForEach(Subject.allCases, id: \.self) { sub in
-                let isOn = selected.contains(sub)
-                Button {
-                    if sub == .everything {
-                        selected = [.everything]
-                    } else {
-                        if selected.contains(.everything) { selected.remove(.everything) }
-                        if isOn { selected.remove(sub) } else { selected.insert(sub) }
-                        if selected.isEmpty { selected = [.everything] }
-                    }
-                    Haptics.tap()
-                } label: {
-                    Text(sub.rawValue)
-                        .font(.subheadline.weight(.semibold))
-                        .padding(.horizontal, 10).padding(.vertical, 6)
-                        .background(isOn ? Color.blue.opacity(0.18) : Color.gray.opacity(0.12))
-                        .foregroundStyle(isOn ? Color.blue : Color.secondary)
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-}
-
 // MARK: - Intake
 
 struct IntakeHandoffView: View {
@@ -443,12 +382,11 @@ struct IntakeManualWordsView: View {
             }
 
             VStack(spacing: 12) {
-                let trimmedWords = store.pendingManualWords.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                let allFilled = trimmedWords.allSatisfy { !$0.isEmpty }
-                let allShortEnough = trimmedWords.allSatisfy { wordCount($0) <= 6 }
-                let canContinue = allFilled && allShortEnough
+                let validationError = store.manualWordsValidationError()
+                let canContinue = validationError == nil
+                let buttonTitle = canContinue ? "Next" : (validationError ?? "Please fill all words (max 6 words each)")
 
-                BigButton(title: canContinue ? "Next" : "Please fill all words (max 6 words each)") {
+                BigButton(title: buttonTitle) {
                     print("📝 Submitting manual words")
                     store.submitPlayerAndWords()
                 }

@@ -449,13 +449,6 @@ struct TitleBank {
         TitleEntry("Event horizon telescope", categories: [.scienceFun], packs: [.premadeObscure], obscurity: 5),
         TitleEntry("Photoelectric effect", categories: [.scienceFun], packs: [.premadeObscure], obscurity: 5),
 
-        // ===== EXTRA WORLD CULTURE FOOD (STANDARD) =====
-        TitleEntry("Arepa con queso", categories: [.foodDrink], packs: [.premadeStandard], obscurity: 3),
-        TitleEntry("Jollof rice", categories: [.foodDrink], packs: [.premadeStandard], obscurity: 3),
-        TitleEntry("Pupusa revuelta", categories: [.foodDrink], packs: [.premadeStandard], obscurity: 3),
-        TitleEntry("Pão de queijo", categories: [.foodDrink], packs: [.premadeStandard], obscurity: 3),
-        TitleEntry("Okonomiyaki", categories: [.foodDrink], packs: [.premadeStandard], obscurity: 3),
-
         // ===== EXTRA MINI-TITLES TO BOOST POOL (MIXED) =====
         TitleEntry("Plot twist", categories: [.movies], packs: [.premadeStandard], obscurity: 1),
         TitleEntry("Cold open", categories: [.movies], packs: [.premadeStandard], obscurity: 2),

@@ -52,23 +52,6 @@ enum RoundPhase: Int, Codable {
     }
 }
 
-// struct Filters: Codable {
-//     var subjects: Set<Subject>
-// }
-// DELETED: Unused - replaced by PackFilters system
-
-enum Subject: String, Codable, CaseIterable, Hashable {
-    case people = "People"
-    case places = "Places"
-    case filmTV = "Film/TV"
-    case music = "Music"
-    case sports = "Sports"
-    case scienceTech = "Science/Tech"
-    case history = "History"
-    case foodDrink = "Food/Drink"
-    case everything = "Everything"
-}
-
 struct Acceptance: Codable {
     var ignoreLeadingArticle: Bool
     var leadingArticles: [String]
@@ -179,26 +162,7 @@ extension Pack {
     }
 }
 
-enum ContentSourceStatus: Equatable {
-    case unknown
-    case checking
-    case available
-    case unavailable(Error)
-    
-    static func == (lhs: ContentSourceStatus, rhs: ContentSourceStatus) -> Bool {
-        switch (lhs, rhs) {
-        case (.unknown, .unknown), (.checking, .checking), (.available, .available):
-            return true
-        case (.unavailable(let lhsError), .unavailable(let rhsError)):
-            return lhsError.localizedDescription == rhsError.localizedDescription
-        default:
-            return false
-        }
-    }
-}
-
 // ClosedRange already conforms to Codable in Swift 5.5+
-
 
 struct Settings: Codable {
     var players: Int

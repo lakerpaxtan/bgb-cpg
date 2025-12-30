@@ -72,26 +72,26 @@ All rounds use the **same deck** (reshuffled between rounds). Gestures are alway
 ## Content Sources & Packs
 The app offers **3 curated content packs**:
 
-### Standard (499 titles)
+### Standard (283 titles)
 Familiar idioms, movies, food, and everyday phrases. Great for casual play.
 - Categories: Movies & TV, Music, Brands, Food, Everyday Things
 - Difficulty: Easy to Medium (obscurity 1–3)
 - Length: Short titles (1–4 words)
-- Examples: “The Matrix”, “Avocado toast”, “Elephant in the room”
+- Examples: "The Matrix", "Avocado toast", "Elephant in the room"
 
-### Obscure (75+ titles)
+### Obscure (89 titles)
 Science facts, internet culture, and mind-bending concepts.
 - Categories: Nerdy Stuff, Science & Nature, Random Facts, Internet Culture
 - Difficulty: Medium to Hard (obscurity 3–5)
 - Length: Longer titles (2–6 words)
-- Examples: “Schrödinger’s cat”, “Trolley problem”, “Mandela effect”
+- Examples: "Fermi paradox", "Trolley problem", "Mandela effect"
 
 ### Custom
 Build your own pack with custom filters.
 - Select from 12 categories
 - Set obscurity (1–5) and word count (1–10)
 - Perfect for themed game nights or specific interests
-- Filters the full 500+ title database based on preferences
+- Filters the full 370+ title database based on preferences
 
 ---
 

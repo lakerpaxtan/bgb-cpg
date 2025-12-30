@@ -55,7 +55,6 @@ final class GameStore: ObservableObject {
     // Intake progress
     @Published var intakeExpectedCount: Int = 0
     @Published var intakeTeamCollecting: Team = .A
-    @Published var intakeIndexInTeam: Int = 0
 
     // Staging buffers for intake
     @Published var pendingName: String = ""
@@ -63,7 +62,6 @@ final class GameStore: ObservableObject {
     @Published var candidateTitles: [Card] = []
     @Published var selectedPicks: Set<UUID> = []
     @Published var pendingManualWords: [String] = []
-    @Published var loadingCandidates: Bool = false
     @Published var candidateLoadingError: String? = nil
     @Published var manualEntryError: String? = nil
     @Published var sharedTitles: [Card] = []
@@ -178,16 +176,6 @@ final class GameStore: ObservableObject {
         setupPremadeTitlesForCustomPack(customFilters)
     }
     
-    // Legacy method for backward compatibility - now uses pack system
-    func startIntake() {
-        print("👥 GameStore.startIntake() - beginning player intake process with current pack: \(settings.selectedPack.displayName)")
-        if settings.selectedPack == .premadeCustom {
-            startIntakeWithCustomPack(settings.customPackFilters)
-        } else {
-            startIntakeWithPack(settings.selectedPack)
-        }
-    }
-
     func startIntakeManualOnly() {
         print("👥 GameStore.startIntakeManualOnly() - beginning player intake with manual-only words")
         startIntakeProcess()
@@ -218,14 +206,12 @@ final class GameStore: ObservableObject {
 
         intakeExpectedCount = settings.players
         intakeTeamCollecting = .A
-        intakeIndexInTeam = 0
     }
     
     private func setupPremadeTitlesForPack(_ pack: Pack) {
         let availableTitles = TitleBank.titlesForPack(pack)
         print("📦 Loaded \(availableTitles.count) titles for pack: \(pack.displayName)")
         
-        loadingCandidates = false
         candidateLoadingError = nil
         if availableTitles.count < (settings.players * settings.wordPoolSizePerPlayer) {
             candidateLoadingError = "Pack '\(pack.displayName)' only has \(availableTitles.count) titles, need \(settings.players * settings.wordPoolSizePerPlayer). Try a different pack."
@@ -295,6 +281,32 @@ final class GameStore: ObservableObject {
         text.split(whereSeparator: { $0.isWhitespace }).count
     }
 
+    func manualWordsValidationError() -> String? {
+        guard settings.manualWordsPerPlayer > 0 else { return nil }
+
+        let trimmed = pendingManualWords.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        if trimmed.contains(where: { $0.isEmpty }) {
+            return "Please fill in all manual words."
+        }
+        if trimmed.contains(where: { wordCount($0) > 6 }) {
+            return "Manual words must be 6 words or fewer."
+        }
+
+        let lowercased = trimmed.map { $0.lowercased() }
+        if Set(lowercased).count != lowercased.count {
+            return "Manual words must be unique."
+        }
+
+        let chosen = candidateTitles.filter { selectedPicks.contains($0.id) }
+        let disallowed = Set(allCards.map { $0.title.lowercased() })
+            .union(chosen.map { $0.title.lowercased() })
+        if lowercased.contains(where: { disallowed.contains($0) }) {
+            return "Manual words must be unique across the game."
+        }
+
+        return nil
+    }
+
     // MARK: - Candidate generation and selection
 
     private func categoryUniverse() -> [String] {
@@ -328,52 +340,6 @@ final class GameStore: ObservableObject {
         return nil
     }
 
-    
-    
-    
-    private func preloadPremadeTitles(totalNeeded: Int) {
-        let subjects = categoryUniverse()
-        var set = Set<String>()
-        var allCards: [Card] = []
-        var cardsPerSubjectCount: [String: Int] = [:]
-        
-        // Initialize counters
-        for subject in subjects {
-            cardsPerSubjectCount[subject] = 0
-        }
-        
-        // Round-robin distribution to ensure each subject gets representation
-        while allCards.count < totalNeeded {
-            var foundCardThisRound = false
-            
-            for subject in subjects {
-                if allCards.count >= totalNeeded { break }
-                
-                let pool = TitleBank.pool(for: subject).shuffled()
-                
-                // Find next available card from this subject
-                for title in pool {
-                    let norm = title.lowercased()
-                    if !set.contains(norm) {
-                        let card = Card(title: title, subject: subject)
-                        allCards.append(card)
-                        set.insert(norm)
-                        cardsPerSubjectCount[subject]! += 1
-                        foundCardThisRound = true
-                        break
-                    }
-                }
-            }
-            
-            // If no cards found in any subject this round, break to avoid infinite loop
-            if !foundCardThisRound {
-                break
-            }
-        }
-        
-        sharedTitles = allCards
-    }
-    
     private func generateCandidatesFromSharedPool() {
         print("🎲 GameStore.generateCandidatesFromSharedPool() - generating \(settings.wordPoolSizePerPlayer) candidates")
         let existingTitles = Set(allCards.map { $0.title.lowercased() })
@@ -492,38 +458,18 @@ final class GameStore: ObservableObject {
             return
         }
 
+        if let error = manualWordsValidationError() {
+            manualEntryError = error
+            print("⚠️ submitPlayerAndWords() blocked: \(error)")
+            return
+        }
+
         let manualWords = pendingManualWords
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        if settings.manualWordsPerPlayer > 0 {
-            if manualWords.count != settings.manualWordsPerPlayer {
-                manualEntryError = "Please fill in all manual words."
-                print("⚠️ submitPlayerAndWords() blocked: manual words incomplete")
-                return
-            }
-            if manualWords.contains(where: { wordCount($0) > 6 }) {
-                manualEntryError = "Manual words must be 6 words or fewer."
-                print("⚠️ submitPlayerAndWords() blocked: manual words too long")
-                return
-            }
-        }
-
         let chosen = candidateTitles.filter { selectedPicks.contains($0.id) }
         var globalLower = Set(allCards.map { $0.title.lowercased() })
-        let disallowedManual = globalLower.union(chosen.map { $0.title.lowercased() })
-        if settings.manualWordsPerPlayer > 0 {
-            let manualLower = manualWords.map { $0.lowercased() }
-            if Set(manualLower).count != manualLower.count {
-                manualEntryError = "Manual words must be unique."
-                print("⚠️ submitPlayerAndWords() blocked: duplicate manual words")
-                return
-            }
-            if manualLower.contains(where: { disallowedManual.contains($0) }) {
-                manualEntryError = "Manual words must be unique across the game."
-                print("⚠️ submitPlayerAndWords() blocked: manual words duplicate existing entries")
-                return
-            }
-        }
+        var avoidLower = globalLower.union(manualWords.map { $0.lowercased() })
 
         // Save the player with trimmed name
         let trimmedName = pendingName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -545,14 +491,17 @@ final class GameStore: ObservableObject {
             if !globalLower.contains(low) {
                 allCards.append(card)
                 globalLower.insert(low)
+                avoidLower.insert(low)
                 added += 1
             }
         }
 
         while added < settings.nonManualWordsPerPlayer,
-              let extra = drawOneCard(avoid: globalLower) {
+              let extra = drawOneCard(avoid: avoidLower) {
             allCards.append(extra)
-            globalLower.insert(extra.title.lowercased())
+            let lower = extra.title.lowercased()
+            globalLower.insert(lower)
+            avoidLower.insert(lower)
             added += 1
         }
 
