@@ -49,7 +49,7 @@ struct HowToView: View {
     let slides: [String] = [
         "Wiki-Celebrity is a 3-round party game where teams guess Wikipedia-style titles using the same deck each round, with progressively harder rules. Test your knowledge and creativity!",
         
-        "GAME SETUP\n\n• 4-10 players split automatically into Team A and Team B\n\n• Each player contributes 3 titles from categories like People, Places, Movies, etc.\n\n• All titles go into one shared deck\n\n• Teams alternate having one \"clue-giver\" while teammates guess",
+        "GAME SETUP\n\n• 4-10 players split into Team A and Team B\n\n• Each player contributes X titles (that only they will know)\n\n• All contributed titles go into one shared deck\n\n• Teams alternate having one \"clue-giver\" while teammates guess",
         
         "BASIC TURN FLOW\n\n• Clue-giver takes phone and faces their team\n\n• Timer starts (default 60 seconds)\n\n• See a title → give clues → team guesses → tap \"Correct\"\n\n• Keep going until time runs out or cards finished\n\n• Review which answers to highlight for scoring\n\n• Pass to other team",
         
@@ -61,9 +61,9 @@ struct HowToView: View {
         
         "ROUND 3 — CHARADES\n\n• NO WORDS AT ALL - only gestures and non-verbal sounds\n\n• Act it out, make sound effects, point, mime\n\n• Skip rules same as Round 2\n\n• Hardest but most entertaining: act out \"Great Wall of China\" with building motions",
         
-        "SCORING & TURN ENDINGS\n\n• Each correct = 1 point, scores accumulate across rounds\n\n• Turn ends when: timer expires, clue-giver manually ends, or all available cards processed\n\n• After each turn: review and toggle off any highlights where you made mistakes (accidentally hit correct or realized you cheated)",
+        "SCORING & TURN ENDINGS\n\n• Each correct = 1 point, scores accumulate across rounds\n\n• Turn ends when: timer expires, clue-giver manually ends, or all available cards processed\n\n• After each turn: review and verify all valid guesses",
         
-        "BONUS TIME SYSTEM\n\n• Complete ALL cards in your turn WITHOUT skipping = save remaining time\n\n• That saved time becomes your timer for next round\n\n• Huge advantage! Completing deck in 30s = 30s timer next round\n\n• Rewards having extra time and not needing skips",
+        "BONUS TIME SYSTEM\n\n• Completing ALL cards in your turn WITHOUT skipping lets you go again\n\n• The extra time leftover from the previous round becomes your starting timer for your additional turn",
         
         "ADDITIONAL CONSIDERATIONS\n\n• Deck maintains same order during each round, but reshuffles between rounds\n\n• Pause anytime to adjust timer or review rules\n\n• We may add other features here later"
     ]

@@ -23,14 +23,7 @@ struct SettingsView: View {
                         Stepper("Turn timer: \(s.timerSeconds)s", value: $s.timerSeconds, in: 30...120, step: 5)
                         Stepper("Candidates per player: \(s.titlesPerPlayer)", value: $s.titlesPerPlayer, in: 6...15)
                         Stepper("Picks per player: \(s.picksPerPlayer)", value: $s.picksPerPlayer, in: 2...5)
-                        Text("Skips handled by round rules.")
-                            .font(.footnote).foregroundStyle(.secondary)
                     }
-
-                    Text("Hint: Players add their names during the pass-around.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 8)
                 }
                 .padding(24)
             }
